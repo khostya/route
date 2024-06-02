@@ -1,9 +1,9 @@
-package module
+package service
 
 import "time"
 
 type (
-	Order struct {
+	DeliverOrderParam struct {
 		ID          string `json:"order_id"`
 		RecipientID string `json:"recipient_id"`
 
@@ -16,7 +16,7 @@ type (
 	}
 
 	RefundedOrderParam struct {
-		Count  int
-		Offset int
+		Size int
+		Page int
 	}
 )

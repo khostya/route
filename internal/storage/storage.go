@@ -3,7 +3,6 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"homework-1/internal/model"
 	"os"
 	"slices"
@@ -34,7 +33,7 @@ func NewStorage(fileName string) (Storage, error) {
 		return storage, errCreateFile
 	}
 
-	err := storage.ReWrite([]model.Order{})
+	err := storage.reWrite([]model.Order{})
 	if err != nil {
 		return storage, err
 	}
@@ -48,12 +47,12 @@ func (s Storage) RefundedOrder(get GetParam) ([]model.Order, error) {
 		return nil, err
 	}
 
-	right := min(get.Offset+get.Count, len(orders))
+	left := min(get.Page*get.Size, len(orders))
+
+	right := min(get.Page*get.Size+get.Size, len(orders))
 	if right < 0 {
 		right = len(orders)
 	}
-
-	left := min(get.Offset, len(orders))
 
 	return orders[left:right], nil
 }
@@ -64,7 +63,7 @@ func (s Storage) ListOrder(userId string, count int, status model.Status) ([]mod
 		return nil, err
 	}
 
-	orders = deleteAll(orders, func(order model.Order) bool {
+	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
 		return order.RecipientID != userId
 	})
 
@@ -77,7 +76,7 @@ func (s Storage) getByStatus(status model.Status) ([]model.Order, error) {
 		return nil, err
 	}
 
-	orders = deleteAll(orders, func(order model.Order) bool {
+	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
 		return order.Status != status
 	})
 	return orders, nil
@@ -89,10 +88,10 @@ func (s Storage) allOrders() ([]model.Order, error) {
 		return nil, err
 	}
 
-	var record Record
+	var record []record
 	err = json.Unmarshal(b, &record)
 
-	return record.Orders, err
+	return extractOrders(record), err
 }
 
 func (s Storage) AddOrder(order model.Order) error {
@@ -105,14 +104,14 @@ func (s Storage) AddOrder(order model.Order) error {
 		return order.ID == o.ID
 	})
 	if isDuplicate {
-		return fmt.Errorf("duplicate order id")
+		return ErrDuplicateOrderID
 	}
 
 	orders = append(orders, order)
-	return s.ReWrite(orders)
+	return s.reWrite(orders)
 }
 
-func (s Storage) ReWrite(orders []model.Order) error {
+func (s Storage) reWrite(orders []model.Order) error {
 	record := newRecord(orders)
 	bWrite, errMarshal := json.MarshalIndent(record, "  ", "  ")
 	if errMarshal != nil {
@@ -128,9 +127,9 @@ func (s Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Ord
 		return nil, err
 	}
 
-	setIds := toCounter(ids)
+	setIds := toSet(ids)
 
-	orders = deleteAll(orders, func(order model.Order) bool {
+	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
 		return !setIds[order.ID]
 	})
 
@@ -143,7 +142,7 @@ func (s Storage) UpdateStatus(ids []string, status model.Status) error {
 		return err
 	}
 
-	setIds := toCounter(ids)
+	setIds := toSet(ids)
 	for i := range orders {
 		if !setIds[orders[i].ID] {
 			continue
@@ -152,7 +151,7 @@ func (s Storage) UpdateStatus(ids []string, status model.Status) error {
 		orders[i].StatusUpdatedAt = time.Now()
 	}
 
-	return s.ReWrite(orders)
+	return s.reWrite(orders)
 }
 
 func (s Storage) GetOrderById(id string) (model.Order, error) {
@@ -166,7 +165,7 @@ func (s Storage) GetOrderById(id string) (model.Order, error) {
 			return order, nil
 		}
 	}
-	return model.Order{}, fmt.Errorf("not found")
+	return model.Order{}, ErrNotFound
 }
 
 func (s Storage) DeleteOrder(id string) error {
@@ -179,7 +178,7 @@ func (s Storage) DeleteOrder(id string) error {
 		return order.ID == id
 	})
 
-	return s.ReWrite(orders)
+	return s.reWrite(orders)
 }
 
 func (s Storage) createFile() error {
@@ -191,23 +190,10 @@ func (s Storage) createFile() error {
 	return nil
 }
 
-func toCounter[T comparable](s []T) map[T]bool {
+func toSet[T comparable](s []T) map[T]bool {
 	var m = make(map[T]bool, len(s))
 	for _, el := range s {
 		m[el] = true
 	}
 	return m
-}
-
-func deleteAll[S ~[]E, E any](s S, del func(E) bool) S {
-	result := make(S, 0, len(s))
-
-	for _, v := range s {
-		if del(v) {
-			continue
-		}
-		result = append(result, v)
-	}
-
-	return result
 }

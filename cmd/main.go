@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"homework-1/internal/cli"
-	"homework-1/internal/module"
+	"homework-1/internal/service"
 	"homework-1/internal/storage"
 	"os"
 	"strings"
@@ -25,12 +25,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	orderService := module.NewModule(module.Deps{
+	orderService := service.NewOrder(service.Deps{
 		Storage: storageJSON,
 	})
 	commands := cli.NewCLI(cli.Deps{
-		Module: orderService,
-		Out:    out,
+		Service: orderService,
+		Out:     out,
 	})
 
 	scanner := bufio.NewScanner(os.Stdin)

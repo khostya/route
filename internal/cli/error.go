@@ -1,0 +1,15 @@
+package cli
+
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	ErrIdIsEmpty      = errors.New("id is empty")
+	ErrUserIsEmpty    = errors.New("user is empty")
+	ErrExpIsEmpty     = errors.New("exp is empty")
+	ErrExpIsNotValid  = errors.New("exp is not valid")
+	ErrPageIsNotValid = errors.New("page is not valid")
+	ErrExit           = fmt.Errorf(exit)
+)
