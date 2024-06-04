@@ -8,15 +8,19 @@ import (
 	"time"
 )
 
+const (
+	RefundPeriod = time.Hour * 24 * 2
+)
+
 type (
 	orderStorage interface {
-		ListOrder(id string, count int, status model.Status) ([]model.Order, error)
+		Orders(id string, count int, status model.Status) ([]model.Order, error)
 		AddOrder(order model.Order) error
 		ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error)
 		UpdateStatus(ids []string, issued model.Status) error
 		GetOrderById(string) (model.Order, error)
 		DeleteOrder(id string) error
-		RefundedOrder(get storage.GetParam) ([]model.Order, error)
+		RefundedOrders(get storage.GetParam) ([]model.Order, error)
 	}
 
 	Deps struct {
@@ -33,6 +37,10 @@ func NewOrder(d Deps) Order {
 }
 
 func (m Order) Deliver(order DeliverOrderParam) error {
+	if order.ExpirationDate.Before(time.Now()) {
+		return ErrExpIsNotValid
+	}
+
 	return m.storage.AddOrder(model.Order{
 		ID:              order.ID,
 		RecipientID:     order.RecipientID,
@@ -42,12 +50,12 @@ func (m Order) Deliver(order DeliverOrderParam) error {
 	})
 }
 
-func (m Order) ListOrder(userID string, count int) ([]model.Order, error) {
-	return m.storage.ListOrder(userID, count, model.StatusDelivered)
+func (m Order) Orders(userID string, count int) ([]model.Order, error) {
+	return m.storage.Orders(userID, count, model.StatusDelivered)
 }
 
-func (m Order) ListRefunded(param RefundedOrderParam) ([]model.Order, error) {
-	return m.storage.RefundedOrder(storage.GetParam{Page: param.Page, Size: param.Size})
+func (m Order) RefundedOrders(param RefundedOrdersParam) ([]model.Order, error) {
+	return m.storage.RefundedOrders(storage.GetParam{Page: param.Page, Size: param.Size})
 }
 
 func (m Order) ReturnOrder(id string) error {
@@ -96,8 +104,9 @@ func (m Order) RefundOrder(param RefundOrderParam) error {
 		return ErrOrderInPVZ
 	}
 
-	if order.StatusUpdatedAt.Sub(time.Now()) > (time.Hour * 24 * 2) {
+	if order.StatusUpdatedAt.Sub(time.Now()) > RefundPeriod {
 		return ErrRefundPeriodHasExpired
 	}
+
 	return m.storage.UpdateStatus([]string{param.ID}, model.StatusRefunded)
 }

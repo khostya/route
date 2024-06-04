@@ -1,14 +1,16 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	help = "help"
 
 	deliverOrder = "deliver"
 	returnOrder  = "return"
-	issueOrder   = "issue"
-	listOrder    = "list"
+	issueOrders  = "issue"
+	listOrders   = "list"
 	refundOrder  = "refund"
 	listRefunded = "refunded"
 
@@ -22,6 +24,7 @@ type (
 		name        string
 		description string
 		usage       string
+		handler     commandHandler
 	}
 )
 
@@ -29,7 +32,9 @@ func (c command) String() string {
 	return fmt.Sprintf("%s\n   %s\n   %s", c.name, c.description, c.usage)
 }
 
-func newCommandList() []command {
+func newCommandList(service orderService) []command {
+	handlers := newHandlers(service)
+
 	return []command{
 		{
 			name:        help,
@@ -40,31 +45,37 @@ func newCommandList() []command {
 			name:        refundOrder,
 			usage:       refundOrderUsage,
 			description: refundOrderDescription,
+			handler:     handlers.mustFind(refundOrder).handle,
 		},
 		{
 			name:        listRefunded,
 			usage:       listRefundedUsage,
 			description: listRefundedDescription,
+			handler:     handlers.mustFind(listRefunded).handle,
 		},
 		{
-			name:        listOrder,
-			usage:       listOrderUsage,
-			description: listOrderDescription,
+			name:        listOrders,
+			usage:       listOrdersUsage,
+			description: listOrdersDescription,
+			handler:     handlers.mustFind(listOrders).handle,
 		},
 		{
-			name:        issueOrder,
-			usage:       issueOrderUsage,
-			description: issueOrderDescription,
+			name:        issueOrders,
+			usage:       issueOrdersUsage,
+			description: issueOrdersDescription,
+			handler:     handlers.mustFind(issueOrders).handle,
 		},
 		{
 			name:        returnOrder,
 			usage:       returnOrderUsage,
 			description: returnOrderDescription,
+			handler:     handlers.mustFind(returnOrder).handle,
 		},
 		{
 			name:        deliverOrder,
 			usage:       deliverOrderUsage,
 			description: deliverOrderDescription,
+			handler:     handlers.mustFind(deliverOrder).handle,
 		},
 		{
 			name:        exit,

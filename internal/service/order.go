@@ -15,7 +15,7 @@ type (
 		RecipientID string `json:"recipient_id"`
 	}
 
-	RefundedOrderParam struct {
+	RefundedOrdersParam struct {
 		Size int
 		Page int
 	}

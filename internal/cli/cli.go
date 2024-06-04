@@ -11,8 +11,8 @@ import (
 type (
 	orderService interface {
 		Deliver(order service.DeliverOrderParam) error
-		ListOrder(userID string, count int) ([]model.Order, error)
-		ListRefunded(param service.RefundedOrderParam) ([]model.Order, error)
+		Orders(userID string, count int) ([]model.Order, error)
+		RefundedOrders(param service.RefundedOrdersParam) ([]model.Order, error)
 		ReturnOrder(id string) error
 		IssueOrders(ids []string) error
 		RefundOrder(param service.RefundOrderParam) error
@@ -27,7 +27,6 @@ type (
 		service     orderService
 		out         *bufio.Writer
 		commandList []command
-		handlers    []handler
 	}
 )
 
@@ -35,8 +34,7 @@ func NewCLI(d Deps) CLI {
 	return CLI{
 		service:     d.Service,
 		out:         d.Out,
-		handlers:    newHandlers(d.Service),
-		commandList: newCommandList(),
+		commandList: newCommandList(d.Service),
 	}
 }
 
@@ -54,13 +52,13 @@ func (c CLI) Run(args []string) error {
 	case exit:
 		return ErrExit
 	default:
-		handlerIndex := slices.IndexFunc(c.handlers, func(h handler) bool {
+		handlerIndex := slices.IndexFunc(c.commandList, func(h command) bool {
 			return h.name == commandName
 		})
 		if handlerIndex == -1 {
 			break
 		}
-		out := c.handlers[handlerIndex].handle(args[1:])
+		out := c.commandList[handlerIndex].handler(args[1:])
 		if out == "" {
 			return nil
 		}

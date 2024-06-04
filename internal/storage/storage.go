@@ -41,7 +41,7 @@ func NewStorage(fileName string) (Storage, error) {
 	return Storage{fileName: fileName}, nil
 }
 
-func (s Storage) RefundedOrder(get GetParam) ([]model.Order, error) {
+func (s Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
 	orders, err := s.getByStatus(model.StatusRefunded)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (s Storage) RefundedOrder(get GetParam) ([]model.Order, error) {
 	return orders[left:right], nil
 }
 
-func (s Storage) ListOrder(userId string, count int, status model.Status) ([]model.Order, error) {
+func (s Storage) Orders(userId string, count int, status model.Status) ([]model.Order, error) {
 	orders, err := s.getByStatus(status)
 	if err != nil {
 		return nil, err

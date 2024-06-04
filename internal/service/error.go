@@ -11,4 +11,5 @@ var (
 	ErrOrderHasExpired           = errors.New("у заказа вышел срок хранения")
 	ErrOrderHasAlreadyBeenIssued = errors.New("заказ уже выдан")
 	ErrExtraIDsInTheRequest      = errors.New("в запросе присутствуют лишние id")
+	ErrExpIsNotValid             = errors.New("expiration date is not valid")
 )
