@@ -13,6 +13,7 @@ const (
 	listOrders   = "list"
 	refundOrder  = "refund"
 	listRefunded = "refunded"
+	procs        = "procs"
 
 	exit = "exit"
 )
@@ -76,6 +77,11 @@ func newCommandList(service orderService) []command {
 			usage:       deliverOrderUsage,
 			description: deliverOrderDescription,
 			handler:     handlers.mustFind(deliverOrder).handle,
+		},
+		{
+			name:        procs,
+			usage:       procsUsage,
+			description: procsDescription,
 		},
 		{
 			name:        exit,

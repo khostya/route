@@ -21,5 +21,8 @@ const (
 	listRefundedUsage       = "refunded --size=20 --page=10"
 	listRefundedDescription = `Получить список всех заказов, которые вернули клиенты: Метод должен выдавать список пагинированно.`
 
+	procsUsage       = "procs --n=10"
+	procsDescription = "Изменить максимальное количество горутин"
+
 	exitDescription = `Завершить выполнение`
 )
