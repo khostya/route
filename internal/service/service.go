@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"homework-1/internal/model"
-	"homework-1/internal/storage"
+	"homework/internal/model"
+	"homework/internal/storage"
 	"time"
 )
 

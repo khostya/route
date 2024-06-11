@@ -2,8 +2,8 @@ package cli
 
 import (
 	"flag"
-	"homework-1/internal/model"
-	"homework-1/internal/service"
+	"homework/internal/model"
+	"homework/internal/service"
 	"math"
 	"strings"
 	"time"

@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"homework-1/internal/cli"
-	"homework-1/internal/service"
-	"homework-1/internal/storage"
+	"homework/internal/cli"
+	"homework/internal/service"
+	"homework/internal/storage"
 	"os"
 	"strings"
 )

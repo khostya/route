@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"homework-1/internal/model"
+	"homework/internal/model"
 	"os"
 	"slices"
 	"time"

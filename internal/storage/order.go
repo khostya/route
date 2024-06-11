@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"homework-1/internal/model"
-	"homework-1/pkg/hash"
+	"homework/internal/model"
+	"homework/pkg/hash"
 )
 
 type (
