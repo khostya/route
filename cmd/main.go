@@ -38,7 +38,7 @@ func main() {
 	app := app{jobs: jobs, cli: commands}
 
 	for i := 0; i < numWorkers; i++ {
-		go app.worker(&wg, result)
+		go app.worker(i, &wg, result, out)
 		wg.Add(1)
 	}
 
@@ -73,8 +73,7 @@ func getJobs(ctx context.Context) <-chan []string {
 	go func(lines chan<- string) {
 		scanner := bufio.NewScanner(os.Stdin)
 		for {
-			_, ok := <-ctx.Done()
-			if ok || !scanner.Scan() {
+			if !scanner.Scan() {
 				close(lines)
 				return
 			}

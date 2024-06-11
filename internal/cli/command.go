@@ -82,6 +82,7 @@ func newCommandList(service orderService) []command {
 			name:        procs,
 			usage:       procsUsage,
 			description: procsDescription,
+			handler:     handlers.mustFind(procs).handle,
 		},
 		{
 			name:        exit,

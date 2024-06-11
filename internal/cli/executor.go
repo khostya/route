@@ -165,7 +165,7 @@ func (e Executor) listRefunded(args []string) string {
 func (e Executor) GOMAXPROCS(args []string) string {
 	var n int
 
-	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
+	fs := flag.NewFlagSet(procs, flag.ContinueOnError)
 	fs.IntVar(&n, "n", math.MaxInt, procsUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
