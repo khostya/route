@@ -6,42 +6,36 @@ import (
 	"homework/internal/model"
 	"os"
 	"slices"
+	"sync"
 	"time"
 )
 
 type (
 	Storage struct {
 		fileName string
-	}
-
-	Order struct {
-		ID          string `json:"order_id"`
-		RecipientID string `json:"recipient_id"`
-
-		ExpirationDate time.Time `json:"expiration_date"`
-		Status         model.Status
+		mutex    sync.RWMutex
 	}
 )
 
-func NewStorage(fileName string) (Storage, error) {
+func NewStorage(fileName string) (*Storage, error) {
 	storage := Storage{fileName: fileName}
 	if _, err := os.Stat(fileName); !errors.Is(err, os.ErrNotExist) {
-		return Storage{fileName: fileName}, nil
+		return &Storage{fileName: fileName}, nil
 	}
 
 	if errCreateFile := storage.createFile(); errCreateFile != nil {
-		return storage, errCreateFile
+		return nil, errCreateFile
 	}
 
 	err := storage.reWrite([]model.Order{})
 	if err != nil {
-		return storage, err
+		return nil, err
 	}
 
-	return Storage{fileName: fileName}, nil
+	return &Storage{fileName: fileName}, nil
 }
 
-func (s Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
+func (s *Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
 	orders, err := s.getByStatus(model.StatusRefunded)
 	if err != nil {
 		return nil, err
@@ -57,7 +51,7 @@ func (s Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
 	return orders[left:right], nil
 }
 
-func (s Storage) Orders(userId string, count int, status model.Status) ([]model.Order, error) {
+func (s *Storage) Orders(userId string, count int, status model.Status) ([]model.Order, error) {
 	orders, err := s.getByStatus(status)
 	if err != nil {
 		return nil, err
@@ -70,7 +64,7 @@ func (s Storage) Orders(userId string, count int, status model.Status) ([]model.
 	return orders[max(len(orders)-count, 0):], nil
 }
 
-func (s Storage) getByStatus(status model.Status) ([]model.Order, error) {
+func (s *Storage) getByStatus(status model.Status) ([]model.Order, error) {
 	orders, err := s.allOrders()
 	if err != nil {
 		return nil, err
@@ -82,7 +76,9 @@ func (s Storage) getByStatus(status model.Status) ([]model.Order, error) {
 	return orders, nil
 }
 
-func (s Storage) allOrders() ([]model.Order, error) {
+func (s *Storage) allOrders() ([]model.Order, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	b, err := os.ReadFile(s.fileName)
 	if err != nil {
 		return nil, err
@@ -94,7 +90,7 @@ func (s Storage) allOrders() ([]model.Order, error) {
 	return extractOrders(record), err
 }
 
-func (s Storage) AddOrder(order model.Order) error {
+func (s *Storage) AddOrder(order model.Order) error {
 	orders, err := s.allOrders()
 	if err != nil {
 		return err
@@ -111,7 +107,9 @@ func (s Storage) AddOrder(order model.Order) error {
 	return s.reWrite(orders)
 }
 
-func (s Storage) reWrite(orders []model.Order) error {
+func (s *Storage) reWrite(orders []model.Order) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	record := newRecord(orders)
 	bWrite, errMarshal := json.MarshalIndent(record, "  ", "  ")
 	if errMarshal != nil {
@@ -121,7 +119,7 @@ func (s Storage) reWrite(orders []model.Order) error {
 	return os.WriteFile(s.fileName, bWrite, 0666)
 }
 
-func (s Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error) {
+func (s *Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error) {
 	orders, err := s.getByStatus(status)
 	if err != nil {
 		return nil, err
@@ -136,7 +134,7 @@ func (s Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Ord
 	return orders, nil
 }
 
-func (s Storage) UpdateStatus(ids []string, status model.Status) error {
+func (s *Storage) UpdateStatus(ids []string, status model.Status) error {
 	orders, err := s.allOrders()
 	if err != nil {
 		return err
@@ -154,7 +152,7 @@ func (s Storage) UpdateStatus(ids []string, status model.Status) error {
 	return s.reWrite(orders)
 }
 
-func (s Storage) GetOrderById(id string) (model.Order, error) {
+func (s *Storage) GetOrderById(id string) (model.Order, error) {
 	orders, err := s.allOrders()
 	if err != nil {
 		return model.Order{}, err
@@ -168,7 +166,7 @@ func (s Storage) GetOrderById(id string) (model.Order, error) {
 	return model.Order{}, ErrNotFound
 }
 
-func (s Storage) DeleteOrder(id string) error {
+func (s *Storage) DeleteOrder(id string) error {
 	orders, err := s.allOrders()
 	if err != nil {
 		return err
@@ -181,7 +179,7 @@ func (s Storage) DeleteOrder(id string) error {
 	return s.reWrite(orders)
 }
 
-func (s Storage) createFile() error {
+func (s *Storage) createFile() error {
 	f, err := os.Create(s.fileName)
 	if err != nil {
 		return err
