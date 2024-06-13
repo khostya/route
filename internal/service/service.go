@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"homework/internal/model"
 	"homework/internal/storage"
+	"sync"
 	"time"
 )
 
@@ -14,7 +15,7 @@ const (
 
 type (
 	orderStorage interface {
-		Orders(id string, count int, status model.Status) ([]model.Order, error)
+		ListUserOrders(id string, count int, status model.Status) ([]model.Order, error)
 		AddOrder(order model.Order) error
 		ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error)
 		UpdateStatus(ids []string, issued model.Status) error
@@ -29,6 +30,7 @@ type (
 
 	Order struct {
 		storage orderStorage
+		mutex   sync.RWMutex
 	}
 )
 
@@ -36,12 +38,15 @@ func NewOrder(d Deps) Order {
 	return Order{storage: d.Storage}
 }
 
-func (m Order) Deliver(order DeliverOrderParam) error {
+func (o *Order) Deliver(order DeliverOrderParam) error {
 	if order.ExpirationDate.Before(time.Now()) {
 		return ErrExpIsNotValid
 	}
 
-	return m.storage.AddOrder(model.Order{
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	return o.storage.AddOrder(model.Order{
 		ID:              order.ID,
 		RecipientID:     order.RecipientID,
 		Status:          model.StatusDelivered,
@@ -50,16 +55,25 @@ func (m Order) Deliver(order DeliverOrderParam) error {
 	})
 }
 
-func (m Order) Orders(userID string, count int) ([]model.Order, error) {
-	return m.storage.Orders(userID, count, model.StatusDelivered)
+func (o *Order) ListUserOrders(userID string, count int) ([]model.Order, error) {
+	o.mutex.RLock()
+	defer o.mutex.RUnlock()
+
+	return o.storage.ListUserOrders(userID, count, model.StatusDelivered)
 }
 
-func (m Order) RefundedOrders(param RefundedOrdersParam) ([]model.Order, error) {
-	return m.storage.RefundedOrders(storage.GetParam{Page: param.Page, Size: param.Size})
+func (o *Order) RefundedOrders(param RefundedOrdersParam) ([]model.Order, error) {
+	o.mutex.RLock()
+	defer o.mutex.RUnlock()
+
+	return o.storage.RefundedOrders(storage.GetParam{Page: param.Page, Size: param.Size})
 }
 
-func (m Order) ReturnOrder(id string) error {
-	order, err := m.storage.GetOrderById(id)
+func (o *Order) ReturnOrder(id string) error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	order, err := o.storage.GetOrderById(id)
 	if err != nil {
 		return err
 	}
@@ -71,11 +85,14 @@ func (m Order) ReturnOrder(id string) error {
 		return ErrOrderHasNotExpired
 	}
 
-	return m.storage.DeleteOrder(id)
+	return o.storage.DeleteOrder(id)
 }
 
-func (m Order) IssueOrders(ids []string) error {
-	orders, err := m.storage.ListOrdersByIds(ids, model.StatusDelivered)
+func (o *Order) IssueOrders(ids []string) error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	orders, err := o.storage.ListOrdersByIds(ids, model.StatusDelivered)
 	if err != nil {
 		return err
 	}
@@ -91,11 +108,14 @@ func (m Order) IssueOrders(ids []string) error {
 		return errors.Wrapf(ErrOrderHasExpired, fmt.Sprintf("id = %s", order.ID))
 	}
 
-	return m.storage.UpdateStatus(ids, model.StatusIssued)
+	return o.storage.UpdateStatus(ids, model.StatusIssued)
 }
 
-func (m Order) RefundOrder(param RefundOrderParam) error {
-	order, err := m.storage.GetOrderById(param.ID)
+func (o *Order) RefundOrder(param RefundOrderParam) error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	order, err := o.storage.GetOrderById(param.ID)
 	if err != nil {
 		return err
 	}
@@ -108,5 +128,5 @@ func (m Order) RefundOrder(param RefundOrderParam) error {
 		return ErrRefundPeriodHasExpired
 	}
 
-	return m.storage.UpdateStatus([]string{param.ID}, model.StatusRefunded)
+	return o.storage.UpdateStatus([]string{param.ID}, model.StatusRefunded)
 }

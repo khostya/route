@@ -130,7 +130,7 @@ func (e Executor) listOrders(args []string) string {
 		return ErrUserIsEmpty.Error()
 	}
 
-	list, err := e.service.Orders(userID, size)
+	list, err := e.service.ListUserOrders(userID, size)
 	if err != nil {
 		return err.Error()
 	}

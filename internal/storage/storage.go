@@ -51,7 +51,7 @@ func (s *Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
 	return orders[left:right], nil
 }
 
-func (s *Storage) Orders(userId string, count int, status model.Status) ([]model.Order, error) {
+func (s *Storage) ListUserOrders(userId string, count int, status model.Status) ([]model.Order, error) {
 	orders, err := s.getByStatus(status)
 	if err != nil {
 		return nil, err

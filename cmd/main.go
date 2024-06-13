@@ -105,12 +105,11 @@ func getCommands(out *bufio.Writer) *cli.CLI {
 		os.Exit(1)
 	}
 
-	orderService := service.NewOrder(service.Deps{
+	var orderService = service.NewOrder(service.Deps{
 		Storage: storageJSON,
 	})
-
 	return cli.NewCLI(cli.Deps{
-		Service: orderService,
+		Service: &orderService,
 		Out:     out,
 	})
 }

@@ -12,7 +12,7 @@ import (
 type (
 	orderService interface {
 		Deliver(order service.DeliverOrderParam) error
-		Orders(userID string, count int) ([]model.Order, error)
+		ListUserOrders(userID string, count int) ([]model.Order, error)
 		RefundedOrders(param service.RefundedOrdersParam) ([]model.Order, error)
 		ReturnOrder(id string) error
 		IssueOrders(ids []string) error
