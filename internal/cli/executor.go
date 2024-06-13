@@ -129,6 +129,9 @@ func (e Executor) listOrders(args []string) string {
 	if userID == "" {
 		return ErrUserIsEmpty.Error()
 	}
+	if size <= 0 {
+		return ErrSizeIsNotValid.Error()
+	}
 
 	list, err := e.service.ListUserOrders(userID, size)
 	if err != nil {
@@ -152,6 +155,9 @@ func (e Executor) listRefunded(args []string) string {
 
 	if page <= 0 {
 		return ErrPageIsNotValid.Error()
+	}
+	if size <= 0 {
+		return ErrSizeIsNotValid.Error()
 	}
 
 	list, err := e.service.RefundedOrders(service.RefundedOrdersParam{Page: page - 1, Size: size})
