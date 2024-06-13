@@ -24,7 +24,6 @@ func newHandlers(service orderService) handlers {
 		newHandler(deliverOrder, executor.deliverOrder),
 		newHandler(listOrders, executor.listOrders),
 		newHandler(listRefunded, executor.listRefunded),
-		newHandler(procs, executor.GOMAXPROCS),
 	}
 }
 

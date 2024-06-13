@@ -9,7 +9,7 @@ var (
 	listOrdersUsage   = fmt.Sprintf("%s %s %s", listOrders, userIdParam, sizeParam)
 	refundOrderUsage  = fmt.Sprintf("%s %s %s", refundOrder, orderIdParam, userIdParam)
 	listRefundedUsage = fmt.Sprintf("%s %s %s", listRefunded, sizeParam, pageParam)
-	procsUsage        = fmt.Sprintf("%s %s", procs, nParam)
+	workersUsage      = fmt.Sprintf("%s %s", workers, nParam)
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 
 	listRefundedDescription = `Получить список всех заказов, которые вернули клиенты: Метод должен выдавать список пагинированно.`
 
-	procsDescription = "Изменить максимальное количество горутин"
+	workersDescription = "Изменить максимальное количество горутин"
 
 	exitDescription = `Завершить выполнение`
 )

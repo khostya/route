@@ -5,7 +5,6 @@ import (
 	"homework/internal/model"
 	"homework/internal/service"
 	"math"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -160,19 +159,6 @@ func (e Executor) listRefunded(args []string) string {
 		return err.Error()
 	}
 	return e.stringOrders(list)
-}
-
-func (e Executor) GOMAXPROCS(args []string) string {
-	var n int
-
-	fs := flag.NewFlagSet(procs, flag.ContinueOnError)
-	fs.IntVar(&n, "n", math.MaxInt, procsUsage)
-	if err := fs.Parse(args); err != nil {
-		return err.Error()
-	}
-
-	runtime.GOMAXPROCS(n)
-	return ""
 }
 
 func (e Executor) stringOrders(orders []model.Order) string {

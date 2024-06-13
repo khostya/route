@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 )
 
@@ -32,15 +31,11 @@ func main() {
 	var (
 		jobs   = getJobs(ctx)
 		result = make(chan error, numJobs)
-		wg     sync.WaitGroup
 	)
 
-	app := app{jobs: jobs, cli: commands}
-
-	for i := 0; i < numWorkers; i++ {
-		go app.worker(i, &wg, result, out)
-		wg.Add(1)
-	}
+	app := newApp(commands, jobs)
+	go app.changeNumberWorkers(commands.GetChangeNumberWorkers())
+	wg := app.RunWorkers(numWorkers, result, out)
 
 	go func() {
 		for {
@@ -61,6 +56,7 @@ func main() {
 	}()
 
 	wg.Wait()
+	commands.Close()
 	_, _ = fmt.Fprintln(out, "done")
 }
 
@@ -102,7 +98,7 @@ func getJobs(ctx context.Context) <-chan []string {
 	return jobs
 }
 
-func getCommands(out *bufio.Writer) cli.CLI {
+func getCommands(out *bufio.Writer) *cli.CLI {
 	storageJSON, err := storage.NewStorage(fileName)
 	if err != nil {
 		fmt.Println(err)
@@ -112,10 +108,9 @@ func getCommands(out *bufio.Writer) cli.CLI {
 	orderService := service.NewOrder(service.Deps{
 		Storage: storageJSON,
 	})
-	commands := cli.NewCLI(cli.Deps{
+
+	return cli.NewCLI(cli.Deps{
 		Service: orderService,
 		Out:     out,
 	})
-
-	return commands
 }
