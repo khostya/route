@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bufio"
@@ -10,38 +10,46 @@ import (
 	"time"
 )
 
-type app struct {
+type App struct {
 	cli           *cli.CLI
 	jobs          <-chan []string
 	numberWorkers int
 
 	stopWorker  chan struct{}
 	startWorker chan struct{}
+
+	wg   sync.WaitGroup
+	stop chan struct{}
 }
 
-func newApp(cli *cli.CLI, jobs <-chan []string) *app {
-	return &app{
+func NewApp(commands *cli.CLI, jobs <-chan []string, workers int, result chan<- error, out *bufio.Writer) *App {
+	app := &App{
 		stopWorker:  make(chan struct{}),
 		startWorker: make(chan struct{}),
-		cli:         cli,
+		cli:         commands,
 		jobs:        jobs,
+		stop:        make(chan struct{}),
 	}
-}
-func (a *app) RunWorkers(n int, result chan<- error, out *bufio.Writer) *sync.WaitGroup {
-	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
-		go a.worker(i, &wg, result, out)
-		wg.Add(1)
-		a.numberWorkers++
-	}
-	return &wg
+	go app.changeNumberWorkers(commands.GetChangeNumberWorkers())
+	app.runWorkers(workers, result, out)
+	return app
 }
 
-func (a *app) worker(n int, wg *sync.WaitGroup, result chan<- error, out *bufio.Writer) {
-	defer wg.Done()
+func (a *App) runWorkers(n int, result chan<- error, out *bufio.Writer) {
+	for i := 0; i < n; i++ {
+		go a.worker(i, result, out)
+		a.wg.Add(1)
+		a.numberWorkers++
+	}
+}
+
+func (a *App) worker(n int, result chan<- error, out *bufio.Writer) {
+	defer a.wg.Done()
 
 	for {
 		select {
+		case <-a.stop:
+			return
 		case job, ok := <-a.jobs:
 			if !ok {
 				return
@@ -52,15 +60,23 @@ func (a *app) worker(n int, wg *sync.WaitGroup, result chan<- error, out *bufio.
 
 			_ = out.Flush()
 		case <-a.startWorker:
-			go a.worker(rand.Intn(math.MaxInt), wg, result, out)
-			wg.Add(1)
+			go a.worker(rand.Intn(math.MaxInt), result, out)
+			a.wg.Add(1)
 		case <-a.stopWorker:
 			return
 		}
 	}
 }
 
-func (a *app) changeNumberWorkers(workers <-chan int) {
+func (a *App) Wait() {
+	a.wg.Wait()
+}
+
+func (a *App) Stop() {
+	close(a.stop)
+}
+
+func (a *App) changeNumberWorkers(workers <-chan int) {
 	for number := range workers {
 		for a.numberWorkers < number {
 			a.startWorker <- struct{}{}

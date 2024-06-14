@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	app2 "homework/internal/app"
 	"homework/internal/cli"
 	"homework/internal/service"
 	"homework/internal/storage"
@@ -33,18 +34,18 @@ func main() {
 		result = make(chan error, numJobs)
 	)
 
-	app := newApp(commands, jobs)
-	go app.changeNumberWorkers(commands.GetChangeNumberWorkers())
-	wg := app.RunWorkers(numWorkers, result, out)
+	app := app2.NewApp(commands, jobs, numWorkers, result, out)
 
 	go func() {
+		defer cancel()
+		defer app.Stop()
+
 		for {
 			select {
 			case _ = <-ctx.Done():
 				return
 			case err := <-result:
 				if errors.Is(err, cli.ErrExit) {
-					cancel()
 					return
 				}
 				if err != nil {
@@ -55,7 +56,7 @@ func main() {
 		}
 	}()
 
-	wg.Wait()
+	app.Wait()
 	commands.Close()
 	_, _ = fmt.Fprintln(out, "done")
 }
