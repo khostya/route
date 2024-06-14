@@ -30,7 +30,7 @@ func main() {
 	commands := getCommands(out)
 
 	var (
-		jobs   = getJobs(ctx)
+		jobs   = getJobs(ctx, getLines(ctx))
 		result = make(chan error, numJobs)
 	)
 
@@ -61,17 +61,14 @@ func main() {
 	_, _ = fmt.Fprintln(out, "done")
 }
 
-func getJobs(ctx context.Context) <-chan []string {
-	var (
-		lines = make(chan string)
-		jobs  = make(chan []string, numJobs)
-	)
+func getLines(ctx context.Context) chan string {
+	lines := make(chan string)
 
 	go func(lines chan<- string) {
+		defer close(lines)
 		scanner := bufio.NewScanner(os.Stdin)
 		for {
 			if !scanner.Scan() {
-				close(lines)
 				return
 			}
 			line := scanner.Text()
@@ -79,15 +76,20 @@ func getJobs(ctx context.Context) <-chan []string {
 		}
 	}(lines)
 
+	return lines
+}
+
+func getJobs(ctx context.Context, lines chan string) <-chan []string {
+	jobs := make(chan []string, numJobs)
+
 	go func(jobs chan<- []string, lines <-chan string) {
+		defer close(jobs)
 		for {
 			select {
 			case _ = <-ctx.Done():
-				close(jobs)
 				return
 			case line, ok := <-lines:
 				if !ok {
-					close(jobs)
 					return
 				}
 				args := strings.Split(line, " ")
