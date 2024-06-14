@@ -1,25 +1,35 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 var (
-	deliverOrderUsage = fmt.Sprintf("%s %s %s %s", deliverOrder, orderIdParam, userIdParam, expParam)
-	returnOrderUsage  = fmt.Sprintf("%s %s", returnOrder, orderIdParam)
-	issueOrdersUsage  = fmt.Sprintf("%s %s", issueOrders, ordersIdsParam)
-	listOrdersUsage   = fmt.Sprintf("%s %s %s", listOrders, userIdParam, sizeParam)
-	refundOrderUsage  = fmt.Sprintf("%s %s %s", refundOrder, orderIdParam, userIdParam)
-	listRefundedUsage = fmt.Sprintf("%s %s %s", listRefunded, sizeParam, pageParam)
-	workersUsage      = fmt.Sprintf("%s %s", workers, nParam)
+	deliverOrderUsage = fmt.Sprintf("%s %s %s %s", deliverOrder, orderIdParamUsage, userIdParamUsage, expParamUsage)
+	returnOrderUsage  = fmt.Sprintf("%s %s", returnOrder, orderIdParamUsage)
+	issueOrdersUsage  = fmt.Sprintf("%s %s", issueOrders, ordersIdsParamUsage)
+	listOrdersUsage   = fmt.Sprintf("%s %s %s", listOrders, userIdParamUsage, sizeParamUsage)
+	refundOrderUsage  = fmt.Sprintf("%s %s %s", refundOrder, orderIdParamUsage, userIdParamUsage)
+	listRefundedUsage = fmt.Sprintf("%s %s %s", listRefunded, sizeParamUsage, pageParamUsage)
+	workersUsage      = fmt.Sprintf("%s %s", workers, nParamUsage)
+
+	orderIdParamUsage   = fmt.Sprintf("--%s=1", orderIdParam)
+	userIdParamUsage    = fmt.Sprintf("--%s=1", userIdParam)
+	expParamUsage       = fmt.Sprintf("--%s=%s", expParam, time.Now().Add(time.Hour*2).Format(time.RFC3339))
+	sizeParamUsage      = fmt.Sprintf("--%s=20", sizeParam)
+	pageParamUsage      = fmt.Sprintf("--%s=10", pageParam)
+	nParamUsage         = fmt.Sprintf("--%s=10", nParam)
+	ordersIdsParamUsage = "<id заказа 1> ... <id заказа N>"
 )
 
 const (
-	orderIdParam   = "--id=<id заказа>"
-	ordersIdsParam = "<id заказа 1> ... <id заказа N>"
-	userIdParam    = "--user=<id>"
-	expParam       = "--exp=2024-06-09T17:12:32+05:00"
-	sizeParam      = "--size=20"
-	pageParam      = "--page=10"
-	nParam         = "--n=10"
+	nParam       = "n"
+	pageParam    = "page"
+	sizeParam    = "size"
+	userIdParam  = "user"
+	expParam     = "exp"
+	orderIdParam = "id"
 
 	helpDescription = "Cправка"
 

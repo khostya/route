@@ -19,8 +19,8 @@ func (e Executor) refundOrder(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(refundOrder, flag.ContinueOnError)
-	fs.StringVar(&userID, "user", "", userIdParam)
-	fs.StringVar(&ID, "id", "", orderIdParam)
+	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -56,7 +56,7 @@ func (e Executor) returnOrder(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.StringVar(&ID, "id", "", orderIdParam)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -79,9 +79,9 @@ func (e Executor) deliverOrder(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.StringVar(&expString, "exp", "", expString)
-	fs.StringVar(&userID, "user", "", userID)
-	fs.StringVar(&ID, "id", "", orderIdParam)
+	fs.StringVar(&expString, expParam, "", expString)
+	fs.StringVar(&userID, userIdParam, "", userID)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -119,8 +119,8 @@ func (e Executor) listOrders(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(listOrders, flag.ContinueOnError)
-	fs.StringVar(&userID, "user", "", userIdParam)
-	fs.IntVar(&size, "size", math.MaxInt, sizeParam)
+	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
+	fs.IntVar(&size, sizeParam, math.MaxInt, sizeParamUsage)
 
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
@@ -147,8 +147,8 @@ func (e Executor) listRefunded(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.IntVar(&size, "size", math.MaxInt, sizeParam)
-	fs.IntVar(&page, "page", 1, pageParam)
+	fs.IntVar(&size, sizeParam, math.MaxInt, sizeParamUsage)
+	fs.IntVar(&page, pageParam, 1, pageParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
