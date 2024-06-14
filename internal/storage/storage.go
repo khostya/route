@@ -27,7 +27,7 @@ func NewStorage(fileName string) (*Storage, error) {
 		return nil, errCreateFile
 	}
 
-	err := storage.reWrite([]model.Order{})
+	err := storage.reWrite([]record{})
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,10 @@ func NewStorage(fileName string) (*Storage, error) {
 }
 
 func (s *Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
+	s.mutex.RLock()
 	orders, err := s.getByStatus(model.StatusRefunded)
+	s.mutex.RUnlock()
+
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +55,10 @@ func (s *Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
 }
 
 func (s *Storage) ListUserOrders(userId string, count int, status model.Status) ([]model.Order, error) {
+	s.mutex.RLock()
 	orders, err := s.getByStatus(status)
+	s.mutex.RUnlock()
+
 	if err != nil {
 		return nil, err
 	}
@@ -65,53 +71,51 @@ func (s *Storage) ListUserOrders(userId string, count int, status model.Status) 
 }
 
 func (s *Storage) getByStatus(status model.Status) ([]model.Order, error) {
-	orders, err := s.allOrders()
+	records, err := s.allRecords()
 	if err != nil {
 		return nil, err
 	}
 
-	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
+	records = slices.DeleteFunc(records, func(order record) bool {
 		return order.Status != status
 	})
-	return orders, nil
+	return extractOrders(records), nil
 }
 
-func (s *Storage) allOrders() ([]model.Order, error) {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+func (s *Storage) allRecords() ([]record, error) {
 	b, err := os.ReadFile(s.fileName)
 	if err != nil {
 		return nil, err
 	}
 
-	var record []record
-	err = json.Unmarshal(b, &record)
+	var records []record
+	err = json.Unmarshal(b, &records)
 
-	return extractOrders(record), err
+	return records, err
 }
 
-func (s *Storage) AddOrder(order model.Order) error {
-	orders, err := s.allOrders()
+func (s *Storage) AddOrder(order model.Order, hash string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	records, err := s.allRecords()
 	if err != nil {
 		return err
 	}
 
-	isDuplicate := slices.ContainsFunc(orders, func(o model.Order) bool {
+	isDuplicate := slices.ContainsFunc(records, func(o record) bool {
 		return order.ID == o.ID
 	})
 	if isDuplicate {
 		return ErrDuplicateOrderID
 	}
 
-	orders = append(orders, order)
-	return s.reWrite(orders)
+	records = append(records, newRecord(order, hash))
+	return s.reWrite(records)
 }
 
-func (s *Storage) reWrite(orders []model.Order) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	record := newRecord(orders)
-	bWrite, errMarshal := json.MarshalIndent(record, "  ", "  ")
+func (s *Storage) reWrite(records []record) error {
+	bWrite, errMarshal := json.MarshalIndent(records, "  ", "  ")
 	if errMarshal != nil {
 		return errMarshal
 	}
@@ -120,7 +124,10 @@ func (s *Storage) reWrite(orders []model.Order) error {
 }
 
 func (s *Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error) {
+	s.mutex.RLock()
 	orders, err := s.getByStatus(status)
+	s.mutex.RUnlock()
+
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +141,11 @@ func (s *Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Or
 	return orders, nil
 }
 
-func (s *Storage) UpdateStatus(ids []string, status model.Status) error {
-	orders, err := s.allOrders()
+func (s *Storage) UpdateStatus(ids []string, status model.Status, hash string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	orders, err := s.allRecords()
 	if err != nil {
 		return err
 	}
@@ -147,36 +157,43 @@ func (s *Storage) UpdateStatus(ids []string, status model.Status) error {
 		}
 		orders[i].Status = status
 		orders[i].StatusUpdatedAt = time.Now()
+		orders[i].Hash = hash
 	}
 
 	return s.reWrite(orders)
 }
 
 func (s *Storage) GetOrderById(id string) (model.Order, error) {
-	orders, err := s.allOrders()
+	s.mutex.RLock()
+	records, err := s.allRecords()
+	s.mutex.RUnlock()
+
 	if err != nil {
 		return model.Order{}, err
 	}
 
-	for _, order := range orders {
-		if order.ID == id {
-			return order, nil
+	for _, record := range records {
+		if record.ID == id {
+			return record.Order, nil
 		}
 	}
 	return model.Order{}, ErrNotFound
 }
 
 func (s *Storage) DeleteOrder(id string) error {
-	orders, err := s.allOrders()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	records, err := s.allRecords()
 	if err != nil {
 		return err
 	}
 
-	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
-		return order.ID == id
+	records = slices.DeleteFunc(records, func(record record) bool {
+		return record.ID == id
 	})
 
-	return s.reWrite(orders)
+	return s.reWrite(records)
 }
 
 func (s *Storage) createFile() error {

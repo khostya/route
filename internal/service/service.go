@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"homework/internal/model"
 	"homework/internal/storage"
+	hash2 "homework/pkg/hash"
 	"sync"
 	"time"
 )
@@ -16,9 +17,9 @@ const (
 type (
 	orderStorage interface {
 		ListUserOrders(id string, count int, status model.Status) ([]model.Order, error)
-		AddOrder(order model.Order) error
+		AddOrder(order model.Order, hash string) error
 		ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error)
-		UpdateStatus(ids []string, issued model.Status) error
+		UpdateStatus(ids []string, issued model.Status, hash string) error
 		GetOrderById(string) (model.Order, error)
 		DeleteOrder(id string) error
 		RefundedOrders(get storage.GetParam) ([]model.Order, error)
@@ -43,6 +44,8 @@ func (o *Order) Deliver(order DeliverOrderParam) error {
 		return ErrExpIsNotValid
 	}
 
+	hash := hash2.GenerateHash()
+
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 
@@ -52,7 +55,7 @@ func (o *Order) Deliver(order DeliverOrderParam) error {
 		Status:          model.StatusDelivered,
 		StatusUpdatedAt: time.Now(),
 		ExpirationDate:  order.ExpirationDate,
-	})
+	}, hash)
 }
 
 func (o *Order) ListUserOrders(userID string, count int) ([]model.Order, error) {
@@ -89,6 +92,8 @@ func (o *Order) ReturnOrder(id string) error {
 }
 
 func (o *Order) IssueOrders(ids []string) error {
+	hash := hash2.GenerateHash()
+
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 
@@ -108,10 +113,12 @@ func (o *Order) IssueOrders(ids []string) error {
 		return errors.Wrapf(ErrOrderHasExpired, fmt.Sprintf("id = %s", order.ID))
 	}
 
-	return o.storage.UpdateStatus(ids, model.StatusIssued)
+	return o.storage.UpdateStatus(ids, model.StatusIssued, hash)
 }
 
 func (o *Order) RefundOrder(param RefundOrderParam) error {
+	hash := hash2.GenerateHash()
+
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 
@@ -128,5 +135,5 @@ func (o *Order) RefundOrder(param RefundOrderParam) error {
 		return ErrRefundPeriodHasExpired
 	}
 
-	return o.storage.UpdateStatus([]string{param.ID}, model.StatusRefunded)
+	return o.storage.UpdateStatus([]string{param.ID}, model.StatusRefunded, hash)
 }
