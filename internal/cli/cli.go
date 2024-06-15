@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"homework/internal/model"
@@ -11,12 +12,12 @@ import (
 
 type (
 	orderService interface {
-		Deliver(order service.DeliverOrderParam) error
-		ListUserOrders(userID string, count int) ([]model.Order, error)
-		RefundedOrders(param service.RefundedOrdersParam) ([]model.Order, error)
-		ReturnOrder(id string) error
-		IssueOrders(ids []string) error
-		RefundOrder(param service.RefundOrderParam) error
+		Deliver(ctx context.Context, order service.DeliverOrderParam) error
+		ListUserOrders(ctx context.Context, userID string, count int) ([]model.Order, error)
+		RefundedOrders(ctx context.Context, param service.RefundedOrdersParam) ([]model.Order, error)
+		ReturnOrder(ctx context.Context, id string) error
+		IssueOrders(ctx context.Context, ids []string) error
+		RefundOrder(ctx context.Context, param service.RefundOrderParam) error
 	}
 
 	Deps struct {
@@ -42,7 +43,7 @@ func NewCLI(d Deps) *CLI {
 	}
 }
 
-func (c CLI) Run(args []string) error {
+func (c CLI) Run(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("command isn't set")
 	}
@@ -65,7 +66,7 @@ func (c CLI) Run(args []string) error {
 		if handlerIndex == -1 {
 			break
 		}
-		out := c.commandList[handlerIndex].handler(args[1:])
+		out := c.commandList[handlerIndex].handler(ctx, args[1:])
 		if out == "" {
 			return nil
 		}

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"flag"
 	"homework/internal/model"
 	"homework/internal/service"
@@ -13,7 +14,7 @@ type Executor struct {
 	service orderService
 }
 
-func (e Executor) refundOrder(args []string) string {
+func (e Executor) refundOrder(ctx context.Context, args []string) string {
 	var (
 		ID, userID string
 	)
@@ -32,7 +33,7 @@ func (e Executor) refundOrder(args []string) string {
 		return ErrUserIsEmpty.Error()
 	}
 
-	err := e.service.RefundOrder(service.RefundOrderParam{
+	err := e.service.RefundOrder(ctx, service.RefundOrderParam{
 		ID:          ID,
 		RecipientID: userID,
 	})
@@ -42,15 +43,15 @@ func (e Executor) refundOrder(args []string) string {
 	return err.Error()
 }
 
-func (e Executor) issueOrders(args []string) string {
-	err := e.service.IssueOrders(args)
+func (e Executor) issueOrders(ctx context.Context, args []string) string {
+	err := e.service.IssueOrders(ctx, args)
 	if err == nil {
 		return ""
 	}
 	return err.Error()
 }
 
-func (e Executor) returnOrder(args []string) string {
+func (e Executor) returnOrder(ctx context.Context, args []string) string {
 	var (
 		ID string
 	)
@@ -65,14 +66,14 @@ func (e Executor) returnOrder(args []string) string {
 		return ErrIdIsEmpty.Error()
 	}
 
-	err := e.service.ReturnOrder(ID)
+	err := e.service.ReturnOrder(ctx, ID)
 	if err == nil {
 		return ""
 	}
 	return err.Error()
 }
 
-func (e Executor) deliverOrder(args []string) string {
+func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	var (
 		ID, userID string
 		expString  string
@@ -101,7 +102,7 @@ func (e Executor) deliverOrder(args []string) string {
 		return err.Error()
 	}
 
-	err = e.service.Deliver(service.DeliverOrderParam{
+	err = e.service.Deliver(ctx, service.DeliverOrderParam{
 		ID:             ID,
 		RecipientID:    userID,
 		ExpirationDate: exp,
@@ -112,7 +113,7 @@ func (e Executor) deliverOrder(args []string) string {
 	return err.Error()
 }
 
-func (e Executor) listOrders(args []string) string {
+func (e Executor) listOrders(ctx context.Context, args []string) string {
 	var (
 		userID string
 		size   int
@@ -133,14 +134,14 @@ func (e Executor) listOrders(args []string) string {
 		return ErrSizeIsNotValid.Error()
 	}
 
-	list, err := e.service.ListUserOrders(userID, size)
+	list, err := e.service.ListUserOrders(ctx, userID, size)
 	if err != nil {
 		return err.Error()
 	}
 	return e.stringOrders(list)
 }
 
-func (e Executor) listRefunded(args []string) string {
+func (e Executor) listRefunded(ctx context.Context, args []string) string {
 	var (
 		size int
 		page int
@@ -160,7 +161,7 @@ func (e Executor) listRefunded(args []string) string {
 		return ErrSizeIsNotValid.Error()
 	}
 
-	list, err := e.service.RefundedOrders(service.RefundedOrdersParam{Page: page - 1, Size: size})
+	list, err := e.service.RefundedOrders(ctx, service.RefundedOrdersParam{Page: page - 1, Size: size})
 	if err != nil {
 		return err.Error()
 	}

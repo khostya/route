@@ -1,214 +1,165 @@
 package storage
 
 import (
-	"encoding/json"
-	"errors"
+	"context"
+	"fmt"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/lib/pq"
 	"homework/internal/model"
-	"os"
-	"slices"
-	"sync"
+	"homework/internal/storage/schema"
+	"homework/internal/storage/transactor"
 	"time"
+)
+
+const (
+	orderTable = "ozon.orders"
+)
+
+var (
+	desc = "DESC"
 )
 
 type (
 	Storage struct {
-		fileName string
-		mutex    sync.RWMutex
+		transactor.QueryEngineProvider
 	}
 )
 
-func NewStorage(fileName string) (*Storage, error) {
-	storage := Storage{fileName: fileName}
-	if _, err := os.Stat(fileName); !errors.Is(err, os.ErrNotExist) {
-		return &Storage{fileName: fileName}, nil
-	}
-
-	if errCreateFile := storage.createFile(); errCreateFile != nil {
-		return nil, errCreateFile
-	}
-
-	err := storage.reWrite([]record{})
-	if err != nil {
-		return nil, err
-	}
-
-	return &Storage{fileName: fileName}, nil
+func NewStorage(provider transactor.QueryEngineProvider) *Storage {
+	return &Storage{provider}
 }
 
-func (s *Storage) RefundedOrders(get GetParam) ([]model.Order, error) {
-	s.mutex.RLock()
-	orders, err := s.getByStatus(model.StatusRefunded)
-	s.mutex.RUnlock()
-
-	if err != nil {
-		return nil, err
-	}
-
-	left := min(get.Page*get.Size, len(orders))
-
-	right := min(get.Page*get.Size+get.Size, len(orders))
-	if right < 0 {
-		right = len(orders)
-	}
-
-	return orders[left:right], nil
+func (s *Storage) RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error) {
+	offset := get.Size * get.Page
+	return s.get(ctx, schema.GetParam{Limit: &get.Size, Offset: &offset, Status: &model.StatusRefunded, Order: &desc})
 }
 
-func (s *Storage) ListUserOrders(userId string, count int, status model.Status) ([]model.Order, error) {
-	s.mutex.RLock()
-	orders, err := s.getByStatus(status)
-	s.mutex.RUnlock()
-
-	if err != nil {
-		return nil, err
-	}
-
-	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
-		return order.RecipientID != userId
-	})
-
-	return orders[max(len(orders)-count, 0):], nil
+func (s *Storage) ListUserOrders(ctx context.Context, userId string, count int, status model.Status) ([]model.Order, error) {
+	return s.get(ctx, schema.GetParam{Status: &status, Limit: &count, RecipientId: &userId, Order: &desc})
 }
 
-func (s *Storage) getByStatus(status model.Status) ([]model.Order, error) {
-	records, err := s.allRecords()
-	if err != nil {
-		return nil, err
-	}
-
-	records = slices.DeleteFunc(records, func(order record) bool {
-		return order.Status != status
-	})
-	return extractOrders(records), nil
+func (s *Storage) getByStatus(ctx context.Context, status model.Status) ([]model.Order, error) {
+	return s.get(ctx, schema.GetParam{Status: &status})
 }
 
-func (s *Storage) allRecords() ([]record, error) {
-	b, err := os.ReadFile(s.fileName)
-	if err != nil {
-		return nil, err
-	}
+func (s *Storage) AddOrder(ctx context.Context, order model.Order, hash string) error {
+	db := s.QueryEngineProvider.GetQueryEngine(ctx)
+	record := schema.NewRecord(order, hash)
+	query := sq.Insert(orderTable).
+		Columns(record.Columns()...).
+		Values(record.Values()...).
+		PlaceholderFormat(sq.Dollar)
 
-	var records []record
-	err = json.Unmarshal(b, &records)
-
-	return records, err
-}
-
-func (s *Storage) AddOrder(order model.Order, hash string) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	records, err := s.allRecords()
+	rawQuery, args, err := query.ToSql()
 	if err != nil {
 		return err
 	}
 
-	isDuplicate := slices.ContainsFunc(records, func(o record) bool {
-		return order.ID == o.ID
-	})
-	if isDuplicate {
+	_, err = db.Exec(ctx, rawQuery, args...)
+	if err == nil {
+		return nil
+	}
+	if isDuplicateKeyError(err) {
 		return ErrDuplicateOrderID
 	}
-
-	records = append(records, newRecord(order, hash))
-	return s.reWrite(records)
+	return err
 }
 
-func (s *Storage) reWrite(records []record) error {
-	bWrite, errMarshal := json.MarshalIndent(records, "  ", "  ")
-	if errMarshal != nil {
-		return errMarshal
+func (s *Storage) ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error) {
+	return s.get(ctx, schema.GetParam{Ids: ids, Status: &status})
+}
+
+func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order, error) {
+	db := s.QueryEngineProvider.GetQueryEngine(ctx)
+	n := 1
+
+	query := sq.Select(schema.Record{}.Columns()...).
+		From(orderTable).
+		PlaceholderFormat(sq.Dollar)
+	if param.Status != nil {
+		query = query.Where(fmt.Sprintf("status = $%v", n), *param.Status)
+		n++
+	}
+	if param.Ids != nil {
+		query = query.Where(fmt.Sprintf("id = ANY($%v)", n), pq.Array(param.Ids))
+		n++
+	}
+	if param.Order != nil {
+		query = query.OrderBy(fmt.Sprintf("created_at %v", *param.Order))
+	}
+	if param.RecipientId != nil {
+		query = query.Where(fmt.Sprintf("recipient_id = $%v", n), *param.RecipientId)
+		n++
+	}
+	if param.Limit != nil {
+		query = query.Limit(uint64(*param.Limit))
+	}
+	if param.Offset != nil {
+		query = query.Offset(uint64(*param.Offset))
 	}
 
-	return os.WriteFile(s.fileName, bWrite, 0666)
-}
-
-func (s *Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error) {
-	s.mutex.RLock()
-	orders, err := s.getByStatus(status)
-	s.mutex.RUnlock()
-
+	rawQuery, args, err := query.ToSql()
 	if err != nil {
-		return nil, err
+		return []model.Order{}, err
 	}
 
-	setIds := toSet(ids)
+	var records []schema.Record
+	if err := pgxscan.Select(ctx, db, &records, rawQuery, args...); err != nil {
+		return []model.Order{}, err
+	}
 
-	orders = slices.DeleteFunc(orders, func(order model.Order) bool {
-		return !setIds[order.ID]
-	})
-
-	return orders, nil
+	return schema.ExtractOrders(records), nil
 }
 
-func (s *Storage) UpdateStatus(ids []string, status model.Status, hash string) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (s *Storage) UpdateStatus(ctx context.Context, ids []string, status model.Status, hash string) error {
+	db := s.QueryEngineProvider.GetQueryEngine(ctx)
+	query := sq.Update(orderTable).
+		Set("status", status).
+		Set("status_updated_at", time.Now()).
+		Set("hash", hash).
+		Where("id = ANY($4)", pq.Array(ids)).
+		PlaceholderFormat(sq.Dollar)
 
-	orders, err := s.allRecords()
+	rawQuery, args, err := query.ToSql()
 	if err != nil {
 		return err
 	}
 
-	setIds := toSet(ids)
-	for i := range orders {
-		if !setIds[orders[i].ID] {
-			continue
-		}
-		orders[i].Status = status
-		orders[i].StatusUpdatedAt = time.Now()
-		orders[i].Hash = hash
+	tag, err := db.Exec(ctx, rawQuery, args...)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
 	}
-
-	return s.reWrite(orders)
+	return err
 }
 
-func (s *Storage) GetOrderById(id string) (model.Order, error) {
-	s.mutex.RLock()
-	records, err := s.allRecords()
-	s.mutex.RUnlock()
-
+func (s *Storage) GetOrderById(ctx context.Context, id string) (model.Order, error) {
+	orders, err := s.get(ctx, schema.GetParam{Ids: []string{id}})
 	if err != nil {
 		return model.Order{}, err
 	}
-
-	for _, record := range records {
-		if record.ID == id {
-			return record.Order, nil
-		}
+	if len(orders) != 0 {
+		return orders[0], nil
 	}
 	return model.Order{}, ErrNotFound
 }
 
-func (s *Storage) DeleteOrder(id string) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (s *Storage) DeleteOrder(ctx context.Context, id string) error {
+	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 
-	records, err := s.allRecords()
+	query := sq.Delete(orderTable).
+		From(orderTable).
+		Where("id = $1", id).
+		PlaceholderFormat(sq.Dollar)
+
+	rawQuery, args, err := query.ToSql()
 	if err != nil {
 		return err
 	}
 
-	records = slices.DeleteFunc(records, func(record record) bool {
-		return record.ID == id
-	})
-
-	return s.reWrite(records)
-}
-
-func (s *Storage) createFile() error {
-	f, err := os.Create(s.fileName)
-	if err != nil {
-		return err
+	tag, err := db.Exec(ctx, rawQuery, args...)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
 	}
-	defer f.Close()
-	return nil
-}
-
-func toSet[T comparable](s []T) map[T]bool {
-	var m = make(map[T]bool, len(s))
-	for _, el := range s {
-		m[el] = true
-	}
-	return m
+	return err
 }
