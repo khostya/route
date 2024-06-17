@@ -14,7 +14,19 @@ type (
 		Size int
 		Page int
 	}
+
+	ListWithHashes struct {
+		list   []string
+		hashes []string
+	}
 )
+
+func NewListWithHashes(t []string, hashes []string) (ListWithHashes, error) {
+	if len(t) == len(hashes) {
+		return ListWithHashes{list: t, hashes: hashes}, nil
+	}
+	return ListWithHashes{}, ErrListWithHashesDifferentLength
+}
 
 func newRecord(order model.Order, hash string) record {
 	return record{order, hash}

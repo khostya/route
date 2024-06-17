@@ -141,7 +141,7 @@ func (s *Storage) ListOrdersByIds(ids []string, status model.Status) ([]model.Or
 	return orders, nil
 }
 
-func (s *Storage) UpdateStatus(ids []string, status model.Status, hash string) error {
+func (s *Storage) UpdateStatus(ids ListWithHashes, status model.Status) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -150,14 +150,14 @@ func (s *Storage) UpdateStatus(ids []string, status model.Status, hash string) e
 		return err
 	}
 
-	setIds := toSet(ids)
+	setIds := toSet(ids.list)
 	for i := range orders {
 		if !setIds[orders[i].ID] {
 			continue
 		}
 		orders[i].Status = status
 		orders[i].StatusUpdatedAt = time.Now()
-		orders[i].Hash = hash
+		orders[i].Hash = ids.hashes[i]
 	}
 
 	return s.reWrite(orders)

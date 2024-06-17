@@ -19,8 +19,8 @@ type (
 		ListUserOrders(id string, count int, status model.Status) ([]model.Order, error)
 		AddOrder(order model.Order, hash string) error
 		ListOrdersByIds(ids []string, status model.Status) ([]model.Order, error)
-		UpdateStatus(ids []string, issued model.Status, hash string) error
-		GetOrderById(string) (model.Order, error)
+		UpdateStatus(ids storage.ListWithHashes, issued model.Status) error
+		GetOrderById(id string) (model.Order, error)
 		DeleteOrder(id string) error
 		RefundedOrders(get storage.GetParam) ([]model.Order, error)
 	}
@@ -59,6 +59,8 @@ func (o *Order) Deliver(order DeliverOrderParam) error {
 }
 
 func (o *Order) ListUserOrders(userID string, count int) ([]model.Order, error) {
+	_ = hash2.GenerateHash()
+
 	o.mutex.RLock()
 	defer o.mutex.RUnlock()
 
@@ -66,6 +68,8 @@ func (o *Order) ListUserOrders(userID string, count int) ([]model.Order, error) 
 }
 
 func (o *Order) RefundedOrders(param RefundedOrdersParam) ([]model.Order, error) {
+	_ = hash2.GenerateHash()
+
 	o.mutex.RLock()
 	defer o.mutex.RUnlock()
 
@@ -73,6 +77,8 @@ func (o *Order) RefundedOrders(param RefundedOrdersParam) ([]model.Order, error)
 }
 
 func (o *Order) ReturnOrder(id string) error {
+	_ = hash2.GenerateHash()
+
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 
@@ -92,7 +98,10 @@ func (o *Order) ReturnOrder(id string) error {
 }
 
 func (o *Order) IssueOrders(ids []string) error {
-	hash := hash2.GenerateHash()
+	hashes, err := o.genHashes(ids)
+	if err != nil {
+		return err
+	}
 
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
@@ -113,11 +122,14 @@ func (o *Order) IssueOrders(ids []string) error {
 		return errors.Wrapf(ErrOrderHasExpired, fmt.Sprintf("id = %s", order.ID))
 	}
 
-	return o.storage.UpdateStatus(ids, model.StatusIssued, hash)
+	return o.storage.UpdateStatus(hashes, model.StatusIssued)
 }
 
 func (o *Order) RefundOrder(param RefundOrderParam) error {
-	hash := hash2.GenerateHash()
+	hashes, err := o.genHashes([]string{param.ID})
+	if err != nil {
+		return err
+	}
 
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
@@ -135,5 +147,13 @@ func (o *Order) RefundOrder(param RefundOrderParam) error {
 		return ErrRefundPeriodHasExpired
 	}
 
-	return o.storage.UpdateStatus([]string{param.ID}, model.StatusRefunded, hash)
+	return o.storage.UpdateStatus(hashes, model.StatusRefunded)
+}
+
+func (o *Order) genHashes(strings []string) (storage.ListWithHashes, error) {
+	var hashes []string
+	for i := 0; i < len(strings); i++ {
+		hashes = append(hashes, hash2.GenerateHash())
+	}
+	return storage.NewListWithHashes(strings, hashes)
 }
