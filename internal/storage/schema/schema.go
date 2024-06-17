@@ -19,6 +19,11 @@ type (
 		CreatedAt time.Time `db:"created_at"`
 	}
 
+	IdsWithHashes struct {
+		Ids    []string
+		Hashes []string
+	}
+
 	PageParam struct {
 		Size uint
 		Page uint
@@ -64,6 +69,13 @@ func ExtractOrders(records []Record) []model.Order {
 			ExpirationDate:  record.ExpirationDate,
 		}
 	})
+}
+
+func NewIdsWithHashes(t []string, hashes []string) (IdsWithHashes, error) {
+	if len(t) == len(hashes) {
+		return IdsWithHashes{Ids: t, Hashes: hashes}, nil
+	}
+	return IdsWithHashes{}, ErrListWithHashesDifferentLength
 }
 
 func mapFunc[IN any, OUT any](in []IN, m func(IN) OUT) []OUT {

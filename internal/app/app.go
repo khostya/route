@@ -23,7 +23,7 @@ type App struct {
 	wg sync.WaitGroup
 }
 
-func NewApp(ctx context.Context, commands *cli.CLI, jobs <-chan []string, workers int, result chan<- error, out *bufio.Writer) *App {
+func NewApp(commands *cli.CLI, jobs <-chan []string) *App {
 	app := &App{
 		stopWorker:  make(chan struct{}),
 		startWorker: make(chan struct{}),
@@ -31,11 +31,10 @@ func NewApp(ctx context.Context, commands *cli.CLI, jobs <-chan []string, worker
 		jobs:        jobs,
 	}
 	go app.changeNumberWorkers(commands.GetChangeNumberWorkers())
-	app.runWorkers(ctx, workers, result, out)
 	return app
 }
 
-func (a *App) runWorkers(ctx context.Context, n int, result chan<- error, out *bufio.Writer) {
+func (a *App) Start(ctx context.Context, n int, result chan<- error, out *bufio.Writer) {
 	for i := 0; i < n; i++ {
 		go a.worker(ctx, i, result, out)
 		a.wg.Add(1)

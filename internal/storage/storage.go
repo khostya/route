@@ -9,6 +9,7 @@ import (
 	"homework/internal/model"
 	"homework/internal/storage/schema"
 	"homework/internal/storage/transactor"
+	"strings"
 	"time"
 )
 
@@ -109,13 +110,20 @@ func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order
 	return schema.ExtractOrders(records), nil
 }
 
-func (s *Storage) UpdateStatus(ctx context.Context, ids []string, status model.Status, hash string) error {
+func (s *Storage) UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, status model.Status) error {
+	var setCases strings.Builder
+	setCases.WriteString("case\n")
+	for i, id := range ids.Ids {
+		setCases.WriteString(fmt.Sprintf("when id = '%s' then '%s'\n", id, ids.Hashes[i]))
+	}
+	setCases.WriteString("end;")
+
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	query := sq.Update(orderTable).
 		Set("status", status).
 		Set("status_updated_at", time.Now()).
-		Set("hash", hash).
-		Where("id = ANY($4)", pq.Array(ids)).
+		Set("hash", setCases.String()).
+		Where("id = ANY($4)", pq.Array(ids.Ids)).
 		PlaceholderFormat(sq.Dollar)
 
 	rawQuery, args, err := query.ToSql()

@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("not found")
-	ErrDuplicateOrderID = errors.New("duplicate order id")
+	ErrNotFound                      = errors.New("not found")
+	ErrDuplicateOrderID              = errors.New("duplicate order id")
+	ErrListWithHashesDifferentLength = errors.New("different length")
 )
 
 func isDuplicateKeyError(err error) bool {
