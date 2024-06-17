@@ -34,7 +34,8 @@ func main() {
 		result = make(chan error, numJobs)
 	)
 
-	app := app2.NewApp(commands, jobs, numWorkers, result, out)
+	app := app2.NewApp(commands, jobs)
+	app.Start(numWorkers, result, out)
 
 	go func() {
 		defer cancel()

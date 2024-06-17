@@ -22,7 +22,7 @@ type App struct {
 	stop chan struct{}
 }
 
-func NewApp(commands *cli.CLI, jobs <-chan []string, workers int, result chan<- error, out *bufio.Writer) *App {
+func NewApp(commands *cli.CLI, jobs <-chan []string) *App {
 	app := &App{
 		stopWorker:  make(chan struct{}),
 		startWorker: make(chan struct{}),
@@ -31,11 +31,10 @@ func NewApp(commands *cli.CLI, jobs <-chan []string, workers int, result chan<- 
 		stop:        make(chan struct{}),
 	}
 	go app.changeNumberWorkers(commands.GetChangeNumberWorkers())
-	app.runWorkers(workers, result, out)
 	return app
 }
 
-func (a *App) runWorkers(n int, result chan<- error, out *bufio.Writer) {
+func (a *App) Start(n int, result chan<- error, out *bufio.Writer) {
 	for i := 0; i < n; i++ {
 		go a.worker(i, result, out)
 		a.wg.Add(1)
