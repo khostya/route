@@ -1,3 +1,4 @@
+-- +goose NO TRANSACTION
 -- +goose Up
 -- +goose StatementBegin
 create index concurrently if not exists orders_recipient_id_idx on ozon.orders using btree(recipient_id);
