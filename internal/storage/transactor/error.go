@@ -9,5 +9,5 @@ type TransactionError struct {
 }
 
 func (t TransactionError) Error() string {
-	return fmt.Sprintf("inner=%s rollbacl=%s", t.Inner, t.Rollback)
+	return fmt.Sprintf("inner=%s rollback=%s", t.Inner, t.Rollback)
 }

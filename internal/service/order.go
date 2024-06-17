@@ -16,7 +16,7 @@ type (
 	}
 
 	RefundedOrdersParam struct {
-		Size int
-		Page int
+		Size uint
+		Page uint
 	}
 )

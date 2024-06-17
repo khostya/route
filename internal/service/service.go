@@ -16,7 +16,7 @@ const (
 
 type (
 	orderStorage interface {
-		ListUserOrders(ctx context.Context, id string, count int, status model.Status) ([]model.Order, error)
+		ListUserOrders(ctx context.Context, id string, count uint, status model.Status) ([]model.Order, error)
 		AddOrder(ctx context.Context, order model.Order, hash string) error
 		ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error)
 		UpdateStatus(ctx context.Context, ids []string, issued model.Status, hash string) error
@@ -60,7 +60,7 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 	}, hash)
 }
 
-func (o *Order) ListUserOrders(ctx context.Context, userID string, count int) ([]model.Order, error) {
+func (o *Order) ListUserOrders(ctx context.Context, userID string, count uint) ([]model.Order, error) {
 	return o.storage.ListUserOrders(ctx, userID, count, model.StatusDelivered)
 }
 

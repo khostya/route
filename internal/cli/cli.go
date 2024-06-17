@@ -13,7 +13,7 @@ import (
 type (
 	orderService interface {
 		Deliver(ctx context.Context, order service.DeliverOrderParam) error
-		ListUserOrders(ctx context.Context, userID string, count int) ([]model.Order, error)
+		ListUserOrders(ctx context.Context, userID string, count uint) ([]model.Order, error)
 		RefundedOrders(ctx context.Context, param service.RefundedOrdersParam) ([]model.Order, error)
 		ReturnOrder(ctx context.Context, id string) error
 		IssueOrders(ctx context.Context, ids []string) error

@@ -14,10 +14,7 @@ import (
 
 const (
 	orderTable = "ozon.orders"
-)
-
-var (
-	desc = "DESC"
+	desc       = "DESC"
 )
 
 type (
@@ -32,15 +29,15 @@ func NewStorage(provider transactor.QueryEngineProvider) *Storage {
 
 func (s *Storage) RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error) {
 	offset := get.Size * get.Page
-	return s.get(ctx, schema.GetParam{Limit: &get.Size, Offset: &offset, Status: &model.StatusRefunded, Order: &desc})
+	return s.get(ctx, schema.GetParam{Limit: get.Size, Offset: offset, Status: model.StatusRefunded, Order: desc})
 }
 
-func (s *Storage) ListUserOrders(ctx context.Context, userId string, count int, status model.Status) ([]model.Order, error) {
-	return s.get(ctx, schema.GetParam{Status: &status, Limit: &count, RecipientId: &userId, Order: &desc})
+func (s *Storage) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
+	return s.get(ctx, schema.GetParam{Status: status, Limit: count, RecipientId: userId, Order: desc})
 }
 
 func (s *Storage) getByStatus(ctx context.Context, status model.Status) ([]model.Order, error) {
-	return s.get(ctx, schema.GetParam{Status: &status})
+	return s.get(ctx, schema.GetParam{Status: status})
 }
 
 func (s *Storage) AddOrder(ctx context.Context, order model.Order, hash string) error {
@@ -67,7 +64,7 @@ func (s *Storage) AddOrder(ctx context.Context, order model.Order, hash string) 
 }
 
 func (s *Storage) ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error) {
-	return s.get(ctx, schema.GetParam{Ids: ids, Status: &status})
+	return s.get(ctx, schema.GetParam{Ids: ids, Status: status})
 }
 
 func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order, error) {
@@ -77,26 +74,26 @@ func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order
 	query := sq.Select(schema.Record{}.Columns()...).
 		From(orderTable).
 		PlaceholderFormat(sq.Dollar)
-	if param.Status != nil {
-		query = query.Where(fmt.Sprintf("status = $%v", n), *param.Status)
+	if param.Status != "" {
+		query = query.Where(fmt.Sprintf("status = $%v", n), param.Status)
 		n++
 	}
 	if param.Ids != nil {
 		query = query.Where(fmt.Sprintf("id = ANY($%v)", n), pq.Array(param.Ids))
 		n++
 	}
-	if param.Order != nil {
-		query = query.OrderBy(fmt.Sprintf("created_at %v", *param.Order))
+	if param.Order != "" {
+		query = query.OrderBy(fmt.Sprintf("created_at %v", param.Order))
 	}
-	if param.RecipientId != nil {
-		query = query.Where(fmt.Sprintf("recipient_id = $%v", n), *param.RecipientId)
+	if param.RecipientId != "" {
+		query = query.Where(fmt.Sprintf("recipient_id = $%v", n), param.RecipientId)
 		n++
 	}
-	if param.Limit != nil {
-		query = query.Limit(uint64(*param.Limit))
+	if param.Limit != 0 {
+		query = query.Limit(uint64(param.Limit))
 	}
-	if param.Offset != nil {
-		query = query.Offset(uint64(*param.Offset))
+	if param.Offset != 0 {
+		query = query.Offset(uint64(param.Offset))
 	}
 
 	rawQuery, args, err := query.ToSql()

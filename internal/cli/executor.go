@@ -116,12 +116,12 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 func (e Executor) listOrders(ctx context.Context, args []string) string {
 	var (
 		userID string
-		size   int
+		size   uint
 	)
 
 	fs := flag.NewFlagSet(listOrders, flag.ContinueOnError)
 	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
-	fs.IntVar(&size, sizeParam, math.MaxInt, sizeParamUsage)
+	fs.UintVar(&size, sizeParam, math.MaxUint, sizeParamUsage)
 
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
@@ -143,13 +143,13 @@ func (e Executor) listOrders(ctx context.Context, args []string) string {
 
 func (e Executor) listRefunded(ctx context.Context, args []string) string {
 	var (
-		size int
-		page int
+		size uint
+		page uint
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.IntVar(&size, sizeParam, math.MaxInt, sizeParamUsage)
-	fs.IntVar(&page, pageParam, 1, pageParamUsage)
+	fs.UintVar(&size, sizeParam, math.MaxUint, sizeParamUsage)
+	fs.UintVar(&page, pageParam, 1, pageParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}

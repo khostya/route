@@ -20,17 +20,17 @@ type (
 	}
 
 	PageParam struct {
-		Size int
-		Page int
+		Size uint
+		Page uint
 	}
 
 	GetParam struct {
 		Ids         []string
-		Status      *model.Status
-		Order       *string
-		Limit       *int
-		RecipientId *string
-		Offset      *int
+		Status      model.Status
+		Order       string
+		Limit       uint
+		RecipientId string
+		Offset      uint
 	}
 )
 
