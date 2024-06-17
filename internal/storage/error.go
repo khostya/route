@@ -2,7 +2,7 @@ package storage
 
 import (
 	"errors"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgconn"
 )
 
 var (
@@ -11,7 +11,8 @@ var (
 )
 
 func isDuplicateKeyError(err error) bool {
-	var pgErr pgx.PgError
+	var pgErr = new(pgconn.PgError)
+
 	ok := errors.As(err, &pgErr)
 	if ok {
 		// unique_violation = 23505

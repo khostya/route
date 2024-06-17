@@ -97,7 +97,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		return ErrUserIsEmpty.Error()
 	}
 
-	exp, err := time.Parse(time.RFC3339, expString)
+	exp, err := time.Parse(model.TimeFormat, expString)
 	if err != nil {
 		return err.Error()
 	}

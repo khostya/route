@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build homework" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <module name="homework-1" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="DATABASE_URL" value="postgres://postgres:password@localhost:5432/postgres?sslmode=disable" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="homework/cmd" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cmd/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

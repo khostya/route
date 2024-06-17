@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"homework/internal/cli"
+	"homework/internal/model"
 	"math"
 	"math/rand"
 	"sync"
@@ -53,9 +54,9 @@ func (a *App) worker(ctx context.Context, n int, result chan<- error, out *bufio
 			if !ok {
 				return
 			}
-			_, _ = fmt.Fprintf(out, "start: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(time.RFC3339))
+			_, _ = fmt.Fprintf(out, "start: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat))
 			result <- a.cli.Run(ctx, job)
-			_, _ = fmt.Fprintf(out, "stop: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(time.RFC3339))
+			_, _ = fmt.Fprintf(out, "stop: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat))
 
 			_ = out.Flush()
 		case <-a.startWorker:
