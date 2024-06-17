@@ -100,9 +100,17 @@ func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
 			return ErrExtraIDsInTheRequest
 		}
 
+		if len(orders) == 0 {
+			return ErrMustBeAtLeastOneOrder
+		}
+
+		recipientId := orders[0].RecipientID
 		for _, order := range orders {
 			if !order.ExpirationDate.Before(time.Now()) {
 				continue
+			}
+			if recipientId != order.RecipientID {
+				return ErrOrdersBelongToDifferentUsers
 			}
 			return errors.Wrapf(ErrOrderHasExpired, fmt.Sprintf("id = %s", order.ID))
 		}
