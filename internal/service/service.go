@@ -19,7 +19,7 @@ type (
 		ListUserOrders(ctx context.Context, id string, count uint, status model.Status) ([]model.Order, error)
 		AddOrder(ctx context.Context, order model.Order, hash string) error
 		ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error)
-		UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, issued model.Status) error
+		UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, status model.Status) error
 		GetOrderById(ctx context.Context, id string) (model.Order, error)
 		DeleteOrder(ctx context.Context, id string) error
 		RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error)
@@ -92,7 +92,7 @@ func (o *Order) ReturnOrder(ctx context.Context, id string) error {
 }
 
 func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
-	hashes, err := o.genHashes(ids)
+	hashes, err := genHashes(ids)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
 }
 
 func (o *Order) RefundOrder(ctx context.Context, param RefundOrderParam) error {
-	hashes, err := o.genHashes([]string{param.ID})
+	hashes, err := genHashes([]string{param.ID})
 	if err != nil {
 		return err
 	}
@@ -150,12 +150,4 @@ func (o *Order) RefundOrder(ctx context.Context, param RefundOrderParam) error {
 		return o.storage.UpdateStatus(ctx, hashes, model.StatusRefunded)
 	})
 	return o.transactionManager.Unwrap(err)
-}
-
-func (o *Order) genHashes(strings []string) (schema.IdsWithHashes, error) {
-	var hashes []string
-	for i := 0; i < len(strings); i++ {
-		hashes = append(hashes, hash2.GenerateHash())
-	}
-	return schema.NewIdsWithHashes(strings, hashes)
 }

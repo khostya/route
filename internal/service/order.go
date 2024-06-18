@@ -1,6 +1,10 @@
 package service
 
-import "time"
+import (
+	"homework/internal/storage/schema"
+	hash2 "homework/pkg/hash"
+	"time"
+)
 
 type (
 	DeliverOrderParam struct {
@@ -20,3 +24,11 @@ type (
 		Page uint
 	}
 )
+
+func genHashes(strings []string) (schema.IdsWithHashes, error) {
+	var hashes []string
+	for i := 0; i < len(strings); i++ {
+		hashes = append(hashes, hash2.GenerateHash())
+	}
+	return schema.NewIdsWithHashes(strings, hashes)
+}
