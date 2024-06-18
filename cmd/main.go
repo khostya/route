@@ -46,7 +46,10 @@ func main() {
 	)
 
 	app := app2.NewApp(commands, jobs)
-	app.Start(ctx, numWorkers, result, out)
+	err = app.Start(ctx, numWorkers, result, out)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	go func() {
 		defer cancel()
