@@ -9,6 +9,7 @@ import (
 	"homework/internal/cli"
 	"homework/internal/service"
 	"homework/internal/storage"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -35,7 +36,10 @@ func main() {
 	)
 
 	app := app2.NewApp(commands, jobs)
-	app.Start(numWorkers, result, out)
+	err := app.Start(numWorkers, result, out)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	go func() {
 		defer cancel()

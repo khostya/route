@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -20,6 +21,8 @@ type App struct {
 
 	wg   sync.WaitGroup
 	stop chan struct{}
+
+	isStarted atomic.Bool
 }
 
 func NewApp(commands *cli.CLI, jobs <-chan []string) *App {
@@ -30,16 +33,21 @@ func NewApp(commands *cli.CLI, jobs <-chan []string) *App {
 		jobs:        jobs,
 		stop:        make(chan struct{}),
 	}
-	go app.changeNumberWorkers(commands.GetChangeNumberWorkers())
 	return app
 }
 
-func (a *App) Start(n int, result chan<- error, out *bufio.Writer) {
+func (a *App) Start(n int, result chan<- error, out *bufio.Writer) error {
+	if a.isStarted.Swap(true) {
+		return ErrHasAlreadyStarted
+	}
+
+	go a.changeNumberWorkers(a.cli.GetChangeNumberWorkers())
 	for i := 0; i < n; i++ {
 		go a.worker(i, result, out)
 		a.wg.Add(1)
 		a.numberWorkers++
 	}
+	return nil
 }
 
 func (a *App) worker(n int, result chan<- error, out *bufio.Writer) {
