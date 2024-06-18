@@ -119,10 +119,12 @@ func getJobs(ctx context.Context, lines chan string) <-chan []string {
 func getCommands(out *bufio.Writer, pool *pgxpool.Pool) (*cli.CLI, error) {
 	transactionManager := transactor.NewTransactionManager(pool)
 
-	storage := storage.NewStorage(&transactionManager)
+	orderStorage := storage.NewOrderStorage(&transactionManager)
+	wrapperStorage := storage.NewWrapperStorage(&transactionManager)
 
 	var orderService = service.NewOrder(service.Deps{
-		Storage:            storage,
+		Storage:            orderStorage,
+		WrapperStorage:     wrapperStorage,
 		TransactionManager: &transactionManager,
 	})
 	return cli.NewCLI(cli.Deps{

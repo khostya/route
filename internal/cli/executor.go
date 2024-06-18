@@ -6,6 +6,7 @@ import (
 	"homework/internal/model"
 	"homework/internal/service"
 	"math"
+	"slices"
 	"strings"
 	"time"
 )
@@ -75,14 +76,18 @@ func (e Executor) returnOrder(ctx context.Context, args []string) string {
 
 func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	var (
-		ID, userID string
-		expString  string
+		ID, userID  string
+		expString   string
+		wrapperType string
+		weightInKg  float64
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
 	fs.StringVar(&expString, expParam, "", expString)
 	fs.StringVar(&userID, userIdParam, "", userID)
 	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
+	fs.StringVar(&wrapperType, wrapperParam, "", wrapperParamUsage)
+	fs.Float64Var(&weightInKg, weightInKgParam, 0, weightInKgUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -96,9 +101,22 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	if userID == "" {
 		return ErrUserIsEmpty.Error()
 	}
+	if weightInKg <= 0 {
+		return ErrWeightInKgInNotValid.Error()
+	}
+
+	wrapperIsEmpty := wrapperType == ""
+	if !wrapperIsEmpty && !slices.Contains(model.GetAllWrapperTypes(), model.WrapperType(wrapperType)) {
+		return ErrWrapperIsNotValid.Error()
+	}
 
 	exp, err := time.Parse(model.TimeFormat, expString)
 	if err != nil {
+		return err.Error()
+	}
+
+	wrapper, err := model.NewDefaultWrapper(model.WrapperType(wrapperType))
+	if !wrapperIsEmpty && err != nil {
 		return err.Error()
 	}
 
@@ -106,6 +124,8 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		ID:             ID,
 		RecipientID:    userID,
 		ExpirationDate: exp,
+		WeightInKg:     weightInKg,
+		Wrapper:        wrapper,
 	})
 	if err == nil {
 		return ""
@@ -171,9 +191,10 @@ func (e Executor) listRefunded(ctx context.Context, args []string) string {
 func (e Executor) stringOrders(orders []model.Order) string {
 	var builder strings.Builder
 
-	for _, order := range orders {
-		builder.WriteString(order.String())
+	for i := 0; i < len(orders)-1; i++ {
+		builder.WriteString(orders[i].String() + "\n")
 	}
+	builder.WriteString(orders[len(orders)-1].String())
 
 	return builder.String()
 }
