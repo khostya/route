@@ -26,6 +26,70 @@ procs --n=10
 ```
 exit
 ```
+## Запрос
+```postgresql
+SELECT id, recipient_id, status, status_updated_at, expiration_date, hash, created_at
+FROM ozon.orders
+where status = 'delivered' and recipient_id = '1' and id = any('{1}')
+order by created_at desc
+limit 1
+offset 0;
+```
+
+```
+Без индексов
+```
+https://explain.tensor.ru/archive/explain/87fac1780751587d62913933111db0b9:0:2024-06-15
+
+```postgresql
+create index on ozon.orders using btree(created_at);
+```
+https://explain.tensor.ru/archive/explain/feadc442b3d6aadc89ea8d8337e4ea98:0:2024-06-15
+
+```postgresql
+create index on ozon.orders using btree(recipient_id);
+```
+https://explain.tensor.ru/archive/explain/f29d8fa9c4e1e076fbe690af341aefae:0:2024-06-15
+
+```postgresql
+create index on ozon.orders using btree(recipient_id);
+create index on ozon.orders using btree(created_at);
+```
+https://explain.tensor.ru/archive/explain/e3b604ef4f363f75d602f06f58bfbd58:0:2024-06-15
+
+```postgresql
+create index on ozon.orders using btree(status, recipient_id, id);
+```
+https://explain.tensor.ru/archive/explain/efcc29899aa66af31134dd3df00a957f:0:2024-06-15
+
+Домашнее задание №3 «Рефакторинг слоя базы данных»
+
+Основное задание
+
+Цель:
+Модифицируйте приложение, написанное в "Домашнее задание №2", чтобы взаимодействие с хранением данных было через Postgres, а не через файл.
+
+Задание:
+
+Переведите ваше приложение с хранения данных в файле на Postgres.
+Реализуйте миграцию для DDL операторов.
+Используйте транзакции.
+
+
+Дополнительное задание:
+
+Проанализируйте запросы в БД. Приложите результаты анализа в README.md. Добавьте индексы, где это необходимо.
+
+
+Подсказки
+
+Помните, что в одном файле миграции должен находиться один DDL оператор.
+Для анализа плана запросов используйте Explain Tensor.
+
+
+Дедлайны сдачи и проверки задания:
+
+15 июня 23:59 (сдача) / 18 июня, 23:59 (проверка)
 
 ## Домашнее задание №2 «Ускорение обработки данных»
 ### Цель:

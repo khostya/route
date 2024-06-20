@@ -10,7 +10,7 @@ type (
 	handlers []handler
 )
 
-func newHandler(name string, handle func([]string) string) handler {
+func newHandler(name string, handle commandHandler) handler {
 	return handler{name: name, handle: handle}
 }
 

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"homework/internal/model"
 	"time"
 )
 
@@ -16,7 +17,7 @@ var (
 
 	orderIdParamUsage   = fmt.Sprintf("--%s=1", orderIdParam)
 	userIdParamUsage    = fmt.Sprintf("--%s=1", userIdParam)
-	expParamUsage       = fmt.Sprintf("--%s=%s", expParam, time.Now().Add(time.Hour*2).Format(time.RFC3339))
+	expParamUsage       = fmt.Sprintf("--%s=%s", expParam, time.Now().Add(time.Hour*2).Format(model.TimeFormat))
 	sizeParamUsage      = fmt.Sprintf("--%s=20", sizeParam)
 	pageParamUsage      = fmt.Sprintf("--%s=10", pageParam)
 	nParamUsage         = fmt.Sprintf("--%s=10", nParam)

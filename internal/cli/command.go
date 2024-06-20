@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -19,7 +20,7 @@ const (
 )
 
 type (
-	commandHandler func([]string) string
+	commandHandler func(context.Context, []string) string
 
 	command struct {
 		name        string

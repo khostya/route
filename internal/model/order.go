@@ -9,19 +9,20 @@ var (
 	StatusDelivered = Status("delivered")
 	StatusIssued    = Status("issued")
 	StatusRefunded  = Status("refunded")
+	TimeFormat      = time.RFC3339
 )
 
 type (
 	Status string
 
 	Order struct {
-		ID          string `json:"order_id"`
-		RecipientID string `json:"recipient_id"`
+		ID          string `json:"order_id" db:"id"`
+		RecipientID string `json:"recipient_id" db:"recipient_id"`
 
-		Status          Status    `json:"status"`
-		StatusUpdatedAt time.Time `json:"status_updated_at"`
+		Status          Status    `json:"status" db:"status"`
+		StatusUpdatedAt time.Time `json:"status_updated_at" db:"status_updated_at"`
 
-		ExpirationDate time.Time `json:"expiration_date"`
+		ExpirationDate time.Time `json:"expiration_date" db:"expiration_date"`
 	}
 )
 
