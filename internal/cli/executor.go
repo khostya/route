@@ -19,8 +19,8 @@ func (e Executor) refundOrder(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(refundOrder, flag.ContinueOnError)
-	fs.StringVar(&userID, "user", "", refundOrderUsage)
-	fs.StringVar(&ID, "id", "", refundOrderUsage)
+	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -56,7 +56,7 @@ func (e Executor) returnOrder(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.StringVar(&ID, "id", "", returnOrderUsage)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -79,9 +79,9 @@ func (e Executor) deliverOrder(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.StringVar(&expString, "exp", "", deliverOrderUsage)
-	fs.StringVar(&userID, "user", "", deliverOrderUsage)
-	fs.StringVar(&ID, "id", "", deliverOrderUsage)
+	fs.StringVar(&expString, expParam, "", expString)
+	fs.StringVar(&userID, userIdParam, "", userID)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -119,8 +119,8 @@ func (e Executor) listOrders(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(listOrders, flag.ContinueOnError)
-	fs.StringVar(&userID, "user", "", listOrdersUsage)
-	fs.IntVar(&size, "size", math.MaxInt, listOrdersUsage)
+	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
+	fs.IntVar(&size, sizeParam, math.MaxInt, sizeParamUsage)
 
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
@@ -129,8 +129,11 @@ func (e Executor) listOrders(args []string) string {
 	if userID == "" {
 		return ErrUserIsEmpty.Error()
 	}
+	if size <= 0 {
+		return ErrSizeIsNotValid.Error()
+	}
 
-	list, err := e.service.Orders(userID, size)
+	list, err := e.service.ListUserOrders(userID, size)
 	if err != nil {
 		return err.Error()
 	}
@@ -144,14 +147,17 @@ func (e Executor) listRefunded(args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.IntVar(&size, "size", math.MaxInt, deliverOrderUsage)
-	fs.IntVar(&page, "page", 1, deliverOrderUsage)
+	fs.IntVar(&size, sizeParam, math.MaxInt, sizeParamUsage)
+	fs.IntVar(&page, pageParam, 1, pageParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
 
 	if page <= 0 {
 		return ErrPageIsNotValid.Error()
+	}
+	if size <= 0 {
+		return ErrSizeIsNotValid.Error()
 	}
 
 	list, err := e.service.RefundedOrders(service.RefundedOrdersParam{Page: page - 1, Size: size})

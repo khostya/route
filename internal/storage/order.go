@@ -2,7 +2,6 @@ package storage
 
 import (
 	"homework/internal/model"
-	"homework/pkg/hash"
 )
 
 type (
@@ -15,12 +14,22 @@ type (
 		Size int
 		Page int
 	}
+
+	ListWithHashes struct {
+		list   []string
+		hashes []string
+	}
 )
 
-func newRecord(orders []model.Order) []record {
-	return mapFunc(orders, func(order model.Order) record {
-		return record{order, hash.GenerateHash()}
-	})
+func NewListWithHashes(t []string, hashes []string) (ListWithHashes, error) {
+	if len(t) == len(hashes) {
+		return ListWithHashes{list: t, hashes: hashes}, nil
+	}
+	return ListWithHashes{}, ErrListWithHashesDifferentLength
+}
+
+func newRecord(order model.Order, hash string) record {
+	return record{order, hash}
 }
 
 func extractOrders(records []record) []model.Order {
