@@ -3,7 +3,7 @@
 help
 ```
 ```
-deliver --id=1 --user=1 --exp=2024-06-09T17:12:32+05:00
+deliver --id=1 --user=1 --exp=2024-06-09T17:12:32+05:00 --wrapper=<box|package|stretch>
 ```
 ```
 list --user=1
