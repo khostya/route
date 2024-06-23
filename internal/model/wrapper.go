@@ -1,5 +1,7 @@
 package model
 
+import "github.com/shopspring/decimal"
+
 const (
 	boxType     = WrapperType("box")
 	packageType = WrapperType("package")
@@ -8,7 +10,7 @@ const (
 
 type (
 	CapacityInKg float64
-	PriceInRub   float64
+	PriceInRub   decimal.Decimal
 
 	WrapperType string
 

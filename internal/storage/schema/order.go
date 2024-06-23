@@ -76,7 +76,7 @@ func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error
 
 		var priceInRub model.PriceInRub
 		if wrapper != nil {
-			priceInRub += wrapper.GetPriceInRub()
+			priceInRub = wrapper.GetPriceInRub()
 		}
 
 		return model.Order{

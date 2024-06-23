@@ -1,10 +1,13 @@
 package model
 
-import "math"
+import (
+	"github.com/shopspring/decimal"
+	"math"
+)
 
 var (
-	stretchCapacityInKg            = CapacityInKg(math.Inf(1))
-	stretchPriceInRub   PriceInRub = 0
+	stretchCapacityInKg = CapacityInKg(math.Inf(1))
+	stretchPriceInRub   = PriceInRub(decimal.NewFromInt(0))
 )
 
 type Stretch struct {

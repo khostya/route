@@ -1,8 +1,10 @@
 package model
 
-const (
+import "github.com/shopspring/decimal"
+
+var (
 	packageCapacityInKg CapacityInKg = 10
-	packagePriceInRub   PriceInRub   = 5
+	packagePriceInRub                = PriceInRub(decimal.NewFromInt(5))
 )
 
 type Package struct {
