@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/shopspring/decimal"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"homework/internal/service"
 	"math"
 	"slices"
@@ -77,11 +78,11 @@ func (e Executor) returnOrder(ctx context.Context, args []string) string {
 
 func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	var (
-		ID, userID       string
-		expString        string
-		wrapperType      string
-		weightInKg       float64
-		priceInRubString string
+		ID, userID        string
+		expString         string
+		wrapperType       string
+		weightInKg        float64
+		priceInRubFloat64 float64
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
@@ -90,7 +91,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	fs.StringVar(&wrapperType, wrapperParam, "", wrapperParamUsage)
 	fs.Float64Var(&weightInKg, weightInKgParam, 0, weightInKgUsage)
-	fs.StringVar(&priceInRubString, priceInRubParam, "", priceInRubParamUsage)
+	fs.Float64Var(&priceInRubFloat64, priceInRubParam, 0, priceInRubParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -107,17 +108,13 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	if weightInKg <= 0 {
 		return ErrWeightInKgInNotValid.Error()
 	}
-	if priceInRubString == "" {
+	if priceInRubFloat64 < 0 {
 		return ErrPriceInRubIsNotValid.Error()
 	}
 
-	priceInRub, err := decimal.NewFromString(priceInRubString)
-	if err != nil {
-		return ErrPriceInRubIsNotValid.Error()
-	}
-
+	priceInRub := wrapper.PriceInRub(decimal.NewFromFloat(priceInRubFloat64))
 	wrapperIsEmpty := wrapperType == ""
-	if !wrapperIsEmpty && !slices.Contains(model.GetAllWrapperTypes(), model.WrapperType(wrapperType)) {
+	if !wrapperIsEmpty && !slices.Contains(wrapper.GetAllWrapperTypes(), wrapper.WrapperType(wrapperType)) {
 		return ErrWrapperIsNotValid.Error()
 	}
 
@@ -126,7 +123,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		return err.Error()
 	}
 
-	wrapper, err := model.NewDefaultWrapper(model.WrapperType(wrapperType))
+	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(wrapperType))
 	if !wrapperIsEmpty && err != nil {
 		return err.Error()
 	}
@@ -137,7 +134,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		ExpirationDate: exp,
 		WeightInGram:   weightInKg * 1000,
 		Wrapper:        wrapper,
-		PriceInRub:     model.PriceInRub(priceInRub),
+		PriceInRub:     priceInRub,
 	})
 	if err == nil {
 		return ""

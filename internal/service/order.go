@@ -1,7 +1,7 @@
 package service
 
 import (
-	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"homework/internal/storage/schema"
 	hash2 "homework/pkg/hash"
 	"time"
@@ -13,9 +13,9 @@ type (
 		RecipientID string `json:"recipient_id"`
 
 		ExpirationDate time.Time `json:"expiration_date"`
-		Wrapper        model.Wrapper
+		Wrapper        wrapper.Wrapper
 		WeightInGram   float64
-		PriceInRub     model.PriceInRub
+		PriceInRub     wrapper.PriceInRub
 	}
 
 	RefundOrderParam struct {

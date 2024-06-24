@@ -3,6 +3,7 @@ package schema
 import (
 	"github.com/shopspring/decimal"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"time"
 )
 
@@ -67,7 +68,7 @@ func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error
 	return mapFuncErr(records, func(record WrapperOrder) (model.Order, error) {
 		order := record.Order
 
-		wrapper, err := extractWrapper(record.NullableWrapper)
+		wrapperModel, err := extractWrapper(record.NullableWrapper)
 		if err != nil {
 			return model.Order{}, err
 		}
@@ -79,8 +80,8 @@ func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error
 			StatusUpdatedAt: order.StatusUpdatedAt,
 			ExpirationDate:  order.ExpirationDate,
 			WeightInGram:    order.WeightInGram,
-			PriceInRub:      model.PriceInRub(order.PriceInRub),
-			Wrapper:         wrapper,
+			PriceInRub:      wrapper.PriceInRub(order.PriceInRub),
+			Wrapper:         wrapperModel,
 		}, nil
 	})
 }

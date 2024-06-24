@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"homework/internal/model/wrapper"
 	"time"
 )
 
@@ -24,8 +25,8 @@ type (
 
 		ExpirationDate time.Time `json:"expiration_date"`
 		WeightInGram   float64   `json:"weight_in_gram"`
-		Wrapper        Wrapper
-		PriceInRub     PriceInRub
+		Wrapper        wrapper.Wrapper
+		PriceInRub     wrapper.PriceInRub
 	}
 )
 

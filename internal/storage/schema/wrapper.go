@@ -2,26 +2,26 @@ package schema
 
 import (
 	"github.com/shopspring/decimal"
-	"homework/internal/model"
+	"homework/internal/model/wrapper"
 )
 
 type (
 	Wrapper struct {
-		OrderID        string               `db:"order_id"`
-		Type           model.WrapperType    `db:"type"`
-		PriceInRub     decimal.Decimal      `db:"wrappers_price_in_rub"`
-		CapacityInGram model.CapacityInGram `db:"capacity_in_gram"`
+		OrderID        string                 `db:"order_id"`
+		Type           wrapper.WrapperType    `db:"type"`
+		PriceInRub     decimal.Decimal        `db:"wrappers_price_in_rub"`
+		CapacityInGram wrapper.CapacityInGram `db:"capacity_in_gram"`
 	}
 
 	NullableWrapper struct {
-		OrderID        *string               `db:"order_id"`
-		Type           *model.WrapperType    `db:"type"`
-		PriceInRub     *decimal.Decimal      `db:"wrappers_price_in_rub"`
-		CapacityInGram *model.CapacityInGram `db:"capacity_in_gram"`
+		OrderID        *string                 `db:"order_id"`
+		Type           *wrapper.WrapperType    `db:"type"`
+		PriceInRub     *decimal.Decimal        `db:"wrappers_price_in_rub"`
+		CapacityInGram *wrapper.CapacityInGram `db:"capacity_in_gram"`
 	}
 )
 
-func NewWrapper(wrapper model.Wrapper, orderID string) Wrapper {
+func NewWrapper(wrapper wrapper.Wrapper, orderID string) Wrapper {
 	return Wrapper{
 		OrderID:        orderID,
 		Type:           wrapper.GetType(),
@@ -42,9 +42,9 @@ func (w Wrapper) Values() []any {
 	return []any{w.OrderID, w.Type, w.CapacityInGram, w.PriceInRub}
 }
 
-func extractWrapper(wrapper NullableWrapper) (model.Wrapper, error) {
-	if wrapper.OrderID == nil {
+func extractWrapper(nullableWrapper NullableWrapper) (wrapper.Wrapper, error) {
+	if nullableWrapper.OrderID == nil {
 		return nil, nil
 	}
-	return model.NewWrapper(*wrapper.Type, *wrapper.CapacityInGram, model.PriceInRub(*wrapper.PriceInRub))
+	return wrapper.NewWrapper(*nullableWrapper.Type, *nullableWrapper.CapacityInGram, wrapper.PriceInRub(*nullableWrapper.PriceInRub))
 }

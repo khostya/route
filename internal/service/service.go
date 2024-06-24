@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"homework/internal/storage/schema"
 	hash2 "homework/pkg/hash"
 	"time"
@@ -27,7 +28,7 @@ type (
 	}
 
 	wrapperStorage interface {
-		AddWrapper(ctx context.Context, order model.Wrapper, orderID string) error
+		AddWrapper(ctx context.Context, order wrapper.Wrapper, orderID string) error
 	}
 
 	transactionManager interface {
@@ -65,7 +66,7 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 		return errors.Wrap(ErrOrderWeightGreaterThanWrapperCapacity, message)
 	}
 
-	wrapperPriceInRub := model.PriceInRub(decimal.NewFromInt(0))
+	wrapperPriceInRub := wrapper.PriceInRub(decimal.NewFromInt(0))
 	if order.Wrapper != nil {
 		wrapperPriceInRub = order.Wrapper.GetPriceInRub()
 	}

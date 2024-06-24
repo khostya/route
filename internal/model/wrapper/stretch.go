@@ -1,4 +1,4 @@
-package model
+package wrapper
 
 import (
 	"github.com/shopspring/decimal"
@@ -10,34 +10,34 @@ var (
 	stretchPriceInRub     = PriceInRub(decimal.NewFromInt(0))
 )
 
-type Stretch struct {
+type stretch struct {
 	capacityInGram CapacityInGram
 	priceInRub     PriceInRub
 }
 
-func NewDefaultStretch() Stretch {
-	return NewStretch(stretchCapacityInGram, stretchPriceInRub)
+func newDefaultStretch() stretch {
+	return newStretch(stretchCapacityInGram, stretchPriceInRub)
 }
 
-func NewStretch(capacity CapacityInGram, price PriceInRub) Stretch {
-	return Stretch{
+func newStretch(capacity CapacityInGram, price PriceInRub) stretch {
+	return stretch{
 		capacityInGram: capacity,
 		priceInRub:     price,
 	}
 }
 
-func (s Stretch) GetCapacityInGram() CapacityInGram {
+func (s stretch) GetCapacityInGram() CapacityInGram {
 	return s.capacityInGram
 }
 
-func (s Stretch) GetPriceInRub() PriceInRub {
+func (s stretch) GetPriceInRub() PriceInRub {
 	return s.priceInRub
 }
 
-func (s Stretch) GetType() WrapperType {
+func (s stretch) GetType() WrapperType {
 	return stretchType
 }
 
-func (s Stretch) WillFitKg(kg float64) bool {
+func (s stretch) WillFitKg(kg float64) bool {
 	return kg < float64(s.capacityInGram)
 }

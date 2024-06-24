@@ -1,4 +1,4 @@
-package model
+package wrapper
 
 import "errors"
 

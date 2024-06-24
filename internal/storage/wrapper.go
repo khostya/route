@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 	sq "github.com/Masterminds/squirrel"
-	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"homework/internal/storage/schema"
 	"homework/internal/storage/transactor"
 )
@@ -22,7 +22,7 @@ func NewWrapperStorage(provider transactor.QueryEngineProvider) *WrapperStorage 
 	return &WrapperStorage{provider}
 }
 
-func (w *WrapperStorage) AddWrapper(ctx context.Context, wrapper model.Wrapper, orderId string) error {
+func (w *WrapperStorage) AddWrapper(ctx context.Context, wrapper wrapper.Wrapper, orderId string) error {
 	db := w.QueryEngineProvider.GetQueryEngine(ctx)
 	record := schema.NewWrapper(wrapper, orderId)
 	query := sq.Insert(wrapperTable).

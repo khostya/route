@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"time"
 )
 
@@ -17,7 +18,7 @@ var (
 	workersUsage      = fmt.Sprintf("%s %s", workers, nParamUsage)
 
 	priceInRubParamUsage = fmt.Sprintf("--%s=10.3", priceInRubParam)
-	wrapperParamUsage    = fmt.Sprintf("--%s=<%s>", wrapperParam, model.GetAllWrapperTypes())
+	wrapperParamUsage    = fmt.Sprintf("--%s=<%s>", wrapperParam, wrapper.GetAllWrapperTypes())
 	orderIdParamUsage    = fmt.Sprintf("--%s=1", orderIdParam)
 	userIdParamUsage     = fmt.Sprintf("--%s=1", userIdParam)
 	expParamUsage        = fmt.Sprintf("--%s=%s", expParam, time.Now().Add(time.Hour*2).Format(model.TimeFormat))

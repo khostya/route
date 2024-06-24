@@ -1,6 +1,8 @@
-package model
+package wrapper
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+)
 
 const (
 	boxType     = WrapperType("box")
@@ -11,8 +13,7 @@ const (
 type (
 	CapacityInGram float64
 	PriceInRub     decimal.Decimal
-
-	WrapperType string
+	WrapperType    string
 
 	Wrapper interface {
 		GetCapacityInGram() CapacityInGram
@@ -25,11 +26,11 @@ type (
 func NewDefaultWrapper(t WrapperType) (Wrapper, error) {
 	switch t {
 	case boxType:
-		return NewDefaultBox(), nil
+		return newDefaultBox(), nil
 	case packageType:
-		return NewDefaultPackage(), nil
+		return newDefaultPackage(), nil
 	case stretchType:
-		return NewDefaultStretch(), nil
+		return newDefaultStretch(), nil
 	default:
 		return nil, ErrUnknownWrapperType
 	}
@@ -38,11 +39,11 @@ func NewDefaultWrapper(t WrapperType) (Wrapper, error) {
 func NewWrapper(t WrapperType, capacityInKg CapacityInGram, priceInRub PriceInRub) (Wrapper, error) {
 	switch t {
 	case boxType:
-		return NewBox(capacityInKg, priceInRub), nil
+		return newBox(capacityInKg, priceInRub), nil
 	case packageType:
-		return NewPackage(capacityInKg, priceInRub), nil
+		return newPackage(capacityInKg, priceInRub), nil
 	case stretchType:
-		return NewStretch(capacityInKg, priceInRub), nil
+		return newStretch(capacityInKg, priceInRub), nil
 	default:
 		return nil, ErrUnknownWrapperType
 	}
