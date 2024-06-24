@@ -59,8 +59,8 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 	if order.ExpirationDate.Before(time.Now()) {
 		return ErrExpIsNotValid
 	}
-	if order.Wrapper != nil && !order.Wrapper.WillFitKg(order.WeightInKg) {
-		message := fmt.Sprintf("capacity_in_kg = %v", order.Wrapper.GetCapacityInKg())
+	if order.Wrapper != nil && !order.Wrapper.WillFitKg(order.WeightInGram/1000) {
+		message := fmt.Sprintf("capacity_in_kg = %v", order.Wrapper.GetCapacityInGram())
 		return errors.Wrap(ErrOrderWeightGreaterThanWrapperCapacity, message)
 	}
 
@@ -72,7 +72,7 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 			Status:          model.StatusDelivered,
 			StatusUpdatedAt: time.Now(),
 			ExpirationDate:  order.ExpirationDate,
-			WeightInKg:      order.WeightInKg,
+			WeightInGram:    order.WeightInGram,
 		}, hash)
 		if err != nil {
 			return err

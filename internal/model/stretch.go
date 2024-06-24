@@ -6,28 +6,28 @@ import (
 )
 
 var (
-	stretchCapacityInKg = CapacityInKg(math.Inf(1))
-	stretchPriceInRub   = PriceInRub(decimal.NewFromInt(0))
+	stretchCapacityInGram = CapacityInGram(math.Inf(1))
+	stretchPriceInRub     = PriceInRub(decimal.NewFromInt(0))
 )
 
 type Stretch struct {
-	capacityInKg CapacityInKg
-	priceInRub   PriceInRub
+	capacityInGram CapacityInGram
+	priceInRub     PriceInRub
 }
 
 func NewDefaultStretch() Stretch {
-	return NewStretch(stretchCapacityInKg, stretchPriceInRub)
+	return NewStretch(stretchCapacityInGram, stretchPriceInRub)
 }
 
-func NewStretch(capacity CapacityInKg, price PriceInRub) Stretch {
+func NewStretch(capacity CapacityInGram, price PriceInRub) Stretch {
 	return Stretch{
-		capacityInKg: capacity,
-		priceInRub:   price,
+		capacityInGram: capacity,
+		priceInRub:     price,
 	}
 }
 
-func (s Stretch) GetCapacityInKg() CapacityInKg {
-	return s.capacityInKg
+func (s Stretch) GetCapacityInGram() CapacityInGram {
+	return s.capacityInGram
 }
 
 func (s Stretch) GetPriceInRub() PriceInRub {
@@ -39,5 +39,5 @@ func (s Stretch) GetType() WrapperType {
 }
 
 func (s Stretch) WillFitKg(kg float64) bool {
-	return kg < float64(s.capacityInKg)
+	return kg < float64(s.capacityInGram)
 }

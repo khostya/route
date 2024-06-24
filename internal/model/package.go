@@ -3,28 +3,28 @@ package model
 import "github.com/shopspring/decimal"
 
 var (
-	packageCapacityInKg CapacityInKg = 10
-	packagePriceInRub                = PriceInRub(decimal.NewFromInt(5))
+	packageCapacityInGram CapacityInGram = 10 * 1000
+	packagePriceInRub                    = PriceInRub(decimal.NewFromInt(5))
 )
 
 type Package struct {
-	capacityInKg CapacityInKg
-	priceInRub   PriceInRub
+	capacityInGram CapacityInGram
+	priceInRub     PriceInRub
 }
 
 func NewDefaultPackage() Package {
-	return NewPackage(packageCapacityInKg, packagePriceInRub)
+	return NewPackage(packageCapacityInGram, packagePriceInRub)
 }
 
-func NewPackage(capacity CapacityInKg, price PriceInRub) Package {
+func NewPackage(capacity CapacityInGram, price PriceInRub) Package {
 	return Package{
-		capacityInKg: capacity,
-		priceInRub:   price,
+		capacityInGram: capacity,
+		priceInRub:     price,
 	}
 }
 
-func (p Package) GetCapacityInKg() CapacityInKg {
-	return packageCapacityInKg
+func (p Package) GetCapacityInGram() CapacityInGram {
+	return packageCapacityInGram
 }
 
 func (p Package) GetPriceInRub() PriceInRub {
@@ -36,5 +36,5 @@ func (p Package) GetType() WrapperType {
 }
 
 func (p Package) WillFitKg(kg float64) bool {
-	return kg < float64(p.capacityInKg)
+	return kg < float64(p.capacityInGram)
 }

@@ -124,7 +124,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		ID:             ID,
 		RecipientID:    userID,
 		ExpirationDate: exp,
-		WeightInKg:     weightInKg,
+		WeightInGram:   weightInKg * 1000,
 		Wrapper:        wrapper,
 	})
 	if err == nil {

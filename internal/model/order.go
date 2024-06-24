@@ -23,7 +23,7 @@ type (
 		StatusUpdatedAt time.Time `json:"status_updated_at"`
 
 		ExpirationDate time.Time `json:"expiration_date"`
-		WeightInKg     float64   `json:"weight_in_kg"`
+		WeightInGram   float64   `json:"weight_in_gram"`
 		Wrapper        Wrapper
 		PriceInRub     PriceInRub
 	}

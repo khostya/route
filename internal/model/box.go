@@ -3,28 +3,28 @@ package model
 import "github.com/shopspring/decimal"
 
 var (
-	boxCapacityInKg CapacityInKg = 30
-	boxPriceInRub                = PriceInRub(decimal.NewFromInt(20))
+	boxCapacityInGram CapacityInGram = 30 * 1000
+	boxPriceInRub                    = PriceInRub(decimal.NewFromInt(20))
 )
 
 type Box struct {
-	capacityInKg CapacityInKg
-	priceInRub   PriceInRub
+	capacityInGram CapacityInGram
+	priceInRub     PriceInRub
 }
 
 func NewDefaultBox() Box {
-	return NewBox(boxCapacityInKg, boxPriceInRub)
+	return NewBox(boxCapacityInGram, boxPriceInRub)
 }
 
-func NewBox(capacity CapacityInKg, price PriceInRub) Box {
+func NewBox(capacity CapacityInGram, price PriceInRub) Box {
 	return Box{
-		capacityInKg: capacity,
-		priceInRub:   price,
+		capacityInGram: capacity,
+		priceInRub:     price,
 	}
 }
 
-func (b Box) GetCapacityInKg() CapacityInKg {
-	return b.capacityInKg
+func (b Box) GetCapacityInGram() CapacityInGram {
+	return b.capacityInGram
 }
 
 func (b Box) GetPriceInRub() PriceInRub {
@@ -36,5 +36,5 @@ func (b Box) GetType() WrapperType {
 }
 
 func (b Box) WillFitKg(kg float64) bool {
-	return kg < float64(b.capacityInKg)
+	return kg*1000 < float64(b.capacityInGram)
 }

@@ -20,9 +20,9 @@ type (
 
 		ExpirationDate time.Time `db:"expiration_date"`
 
-		Hash       string    `db:"hash"`
-		CreatedAt  time.Time `db:"created_at"`
-		WeightInKg float64   `db:"weight_in_kg"`
+		Hash         string    `db:"hash"`
+		CreatedAt    time.Time `db:"created_at"`
+		WeightInGram float64   `db:"weight_in_gram"`
 	}
 )
 
@@ -33,7 +33,7 @@ func NewOrder(order model.Order, hash string) Order {
 		Status:          order.Status,
 		StatusUpdatedAt: order.StatusUpdatedAt,
 		ExpirationDate:  order.ExpirationDate,
-		WeightInKg:      order.WeightInKg,
+		WeightInGram:    order.WeightInGram,
 		Hash:            hash,
 		CreatedAt:       time.Now(),
 	}
@@ -42,27 +42,15 @@ func NewOrder(order model.Order, hash string) Order {
 func (o Order) Columns() []string {
 	return []string{
 		"id", "recipient_id", "status", "status_updated_at",
-		"expiration_date", "hash", "created_at", "weight_in_kg",
+		"expiration_date", "hash", "created_at", "weight_in_gram",
 	}
 }
 
 func (o Order) Values() []any {
 	return []any{
 		o.ID, o.RecipientID, o.Status, o.StatusUpdatedAt,
-		o.ExpirationDate, o.Hash, o.CreatedAt, o.WeightInKg,
+		o.ExpirationDate, o.Hash, o.CreatedAt, o.WeightInGram,
 	}
-}
-
-func ExtractOrders(records []Order) []model.Order {
-	return mapFunc(records, func(record Order) model.Order {
-		return model.Order{
-			ID:              record.ID,
-			RecipientID:     record.RecipientID,
-			Status:          record.Status,
-			StatusUpdatedAt: record.StatusUpdatedAt,
-			ExpirationDate:  record.ExpirationDate,
-		}
-	})
 }
 
 func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error) {
@@ -85,7 +73,7 @@ func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error
 			Status:          order.Status,
 			StatusUpdatedAt: order.StatusUpdatedAt,
 			ExpirationDate:  order.ExpirationDate,
-			WeightInKg:      order.WeightInKg,
+			WeightInGram:    order.WeightInGram,
 			PriceInRub:      priceInRub,
 			Wrapper:         wrapper,
 		}, nil
