@@ -4,6 +4,7 @@
     <working_directory value="$PROJECT_DIR$" />
     <envs>
       <env name="DATABASE_URL" value="postgres://postgres:password@localhost:5432/postgres?sslmode=disable" />
+      <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.yaml" />
     </envs>
     <kind value="PACKAGE" />
     <package value="homework/cmd" />

@@ -13,7 +13,7 @@ type (
 		RecipientID string `json:"recipient_id"`
 
 		ExpirationDate time.Time `json:"expiration_date"`
-		Wrapper        wrapper.Wrapper
+		Wrapper        *wrapper.Wrapper
 		WeightInGram   float64
 		PriceInRub     wrapper.PriceInRub
 	}

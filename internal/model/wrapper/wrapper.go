@@ -2,12 +2,7 @@ package wrapper
 
 import (
 	"github.com/shopspring/decimal"
-)
-
-const (
-	boxType     = WrapperType("box")
-	packageType = WrapperType("package")
-	stretchType = WrapperType("stretch")
+	"homework/config"
 )
 
 type (
@@ -15,48 +10,65 @@ type (
 	PriceInRub     decimal.Decimal
 	WrapperType    string
 
-	Wrapper interface {
-		GetCapacityInGram() CapacityInGram
-		GetType() WrapperType
-		GetPriceInRub() PriceInRub
-		WillFitKg(kg float64) bool
+	Wrapper struct {
+		t              WrapperType
+		capacityInGram CapacityInGram
+		priceInRub     PriceInRub
 	}
 )
 
-func NewDefaultWrapper(t WrapperType) (Wrapper, error) {
-	switch t {
-	case boxType:
-		return newDefaultBox(), nil
-	case packageType:
-		return newDefaultPackage(), nil
-	case stretchType:
-		return newDefaultStretch(), nil
-	default:
-		return nil, ErrUnknownWrapperType
+var wrappers Wrappers = make(map[WrapperType]*Wrapper)
+
+func init() {
+	wrappersCFG, err := config.NewWrappersConfig()
+	if err != nil {
+		println(err)
+	}
+
+	for _, wrapper := range wrappersCFG.Wrappers {
+		wrapperType := WrapperType(wrapper.Type)
+		capacityInGram := CapacityInGram(wrapper.CapacityInGram)
+		priceInRub := PriceInRub(decimal.NewFromFloat(wrapper.PriceInRub))
+		wrappers.Add(wrapperType, NewWrapper(wrapperType, capacityInGram, priceInRub))
 	}
 }
 
-func NewWrapper(t WrapperType, capacityInKg CapacityInGram, priceInRub PriceInRub) (Wrapper, error) {
-	switch t {
-	case boxType:
-		return newBox(capacityInKg, priceInRub), nil
-	case packageType:
-		return newPackage(capacityInKg, priceInRub), nil
-	case stretchType:
-		return newStretch(capacityInKg, priceInRub), nil
-	default:
+func NewDefaultWrapper(t WrapperType) (*Wrapper, error) {
+	wrapper, ok := wrappers.Get(t)
+	if !ok {
 		return nil, ErrUnknownWrapperType
 	}
+	return wrapper, nil
+}
+
+func NewWrapper(t WrapperType, capacityInGram CapacityInGram, priceInRub PriceInRub) *Wrapper {
+	return &Wrapper{t: t, capacityInGram: capacityInGram, priceInRub: priceInRub}
 }
 
 func (p PriceInRub) Add(p2 PriceInRub) PriceInRub {
 	return PriceInRub(decimal.Decimal(p).Add(decimal.Decimal(p2)))
 }
 
+func (w Wrapper) GetCapacityInGram() CapacityInGram {
+	return w.capacityInGram
+}
+
+func (w Wrapper) GetType() WrapperType {
+	return w.t
+}
+
+func (w Wrapper) GetPriceInRub() PriceInRub {
+	return w.priceInRub
+}
+
+func (w Wrapper) WillFitKg(kg float64) bool {
+	return kg < float64(w.capacityInGram)
+}
+
 func GetAllWrapperTypes() []WrapperType {
-	return []WrapperType{
-		boxType,
-		packageType,
-		stretchType,
+	var types []WrapperType
+	for key := range wrappers {
+		types = append(types, key)
 	}
+	return types
 }

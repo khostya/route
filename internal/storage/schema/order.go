@@ -67,12 +67,7 @@ func (o Order) Values() []any {
 func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error) {
 	return mapFuncErr(records, func(record WrapperOrder) (model.Order, error) {
 		order := record.Order
-
-		wrapperModel, err := extractWrapper(record.NullableWrapper)
-		if err != nil {
-			return model.Order{}, err
-		}
-
+		wrapperModel := extractWrapper(record.NullableWrapper)
 		return model.Order{
 			ID:              order.ID,
 			RecipientID:     order.RecipientID,

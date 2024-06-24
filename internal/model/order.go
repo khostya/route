@@ -25,7 +25,7 @@ type (
 
 		ExpirationDate time.Time `json:"expiration_date"`
 		WeightInGram   float64   `json:"weight_in_gram"`
-		Wrapper        wrapper.Wrapper
+		Wrapper        *wrapper.Wrapper
 		PriceInRub     wrapper.PriceInRub
 	}
 )

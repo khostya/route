@@ -42,9 +42,9 @@ func (w Wrapper) Values() []any {
 	return []any{w.OrderID, w.Type, w.CapacityInGram, w.PriceInRub}
 }
 
-func extractWrapper(nullableWrapper NullableWrapper) (wrapper.Wrapper, error) {
+func extractWrapper(nullableWrapper NullableWrapper) *wrapper.Wrapper {
 	if nullableWrapper.OrderID == nil {
-		return nil, nil
+		return nil
 	}
 	return wrapper.NewWrapper(*nullableWrapper.Type, *nullableWrapper.CapacityInGram, wrapper.PriceInRub(*nullableWrapper.PriceInRub))
 }

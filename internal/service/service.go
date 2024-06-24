@@ -90,7 +90,7 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 			return nil
 		}
 
-		return o.wrapperStorage.AddWrapper(ctx, order.Wrapper, order.ID)
+		return o.wrapperStorage.AddWrapper(ctx, *order.Wrapper, order.ID)
 	})
 
 	return o.transactionManager.Unwrap(err)
