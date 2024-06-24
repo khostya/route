@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"flag"
+	"github.com/shopspring/decimal"
 	"homework/internal/model"
 	"homework/internal/service"
 	"math"
@@ -76,10 +77,11 @@ func (e Executor) returnOrder(ctx context.Context, args []string) string {
 
 func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	var (
-		ID, userID  string
-		expString   string
-		wrapperType string
-		weightInKg  float64
+		ID, userID       string
+		expString        string
+		wrapperType      string
+		weightInKg       float64
+		priceInRubString string
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
@@ -88,6 +90,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	fs.StringVar(&wrapperType, wrapperParam, "", wrapperParamUsage)
 	fs.Float64Var(&weightInKg, weightInKgParam, 0, weightInKgUsage)
+	fs.StringVar(&priceInRubString, priceInRubParam, "", priceInRubParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -103,6 +106,14 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	}
 	if weightInKg <= 0 {
 		return ErrWeightInKgInNotValid.Error()
+	}
+	if priceInRubString == "" {
+		return ErrPriceInRubIsNotValid.Error()
+	}
+
+	priceInRub, err := decimal.NewFromString(priceInRubString)
+	if err != nil {
+		return ErrPriceInRubIsNotValid.Error()
 	}
 
 	wrapperIsEmpty := wrapperType == ""
@@ -126,6 +137,7 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		ExpirationDate: exp,
 		WeightInGram:   weightInKg * 1000,
 		Wrapper:        wrapper,
+		PriceInRub:     model.PriceInRub(priceInRub),
 	})
 	if err == nil {
 		return ""

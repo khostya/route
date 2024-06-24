@@ -15,6 +15,7 @@ type (
 		ExpirationDate time.Time `json:"expiration_date"`
 		Wrapper        model.Wrapper
 		WeightInGram   float64
+		PriceInRub     model.PriceInRub
 	}
 
 	RefundOrderParam struct {

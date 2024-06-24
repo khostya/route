@@ -72,7 +72,7 @@ func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	n := 1
 
-	columns := append(schema.Wrapper{}.Columns(), schema.Order{}.Columns()...)
+	columns := append(schema.Wrapper{}.SelectColumns(), schema.Order{}.SelectColumns()...)
 	query := sq.Select(columns...).
 		From(orderTable).
 		LeftJoin("ozon.wrappers on wrappers.order_id = orders.id").

@@ -48,6 +48,10 @@ func NewWrapper(t WrapperType, capacityInKg CapacityInGram, priceInRub PriceInRu
 	}
 }
 
+func (p PriceInRub) Add(p2 PriceInRub) PriceInRub {
+	return PriceInRub(decimal.Decimal(p).Add(decimal.Decimal(p2)))
+}
+
 func GetAllWrapperTypes() []WrapperType {
 	return []WrapperType{
 		boxType,

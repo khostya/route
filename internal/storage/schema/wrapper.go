@@ -9,14 +9,14 @@ type (
 	Wrapper struct {
 		OrderID        string               `db:"order_id"`
 		Type           model.WrapperType    `db:"type"`
-		PriceInRub     decimal.Decimal      `db:"price_in_rub"`
+		PriceInRub     decimal.Decimal      `db:"wrappers_price_in_rub"`
 		CapacityInGram model.CapacityInGram `db:"capacity_in_gram"`
 	}
 
 	NullableWrapper struct {
 		OrderID        *string               `db:"order_id"`
 		Type           *model.WrapperType    `db:"type"`
-		PriceInRub     *decimal.Decimal      `db:"price_in_rub"`
+		PriceInRub     *decimal.Decimal      `db:"wrappers_price_in_rub"`
 		CapacityInGram *model.CapacityInGram `db:"capacity_in_gram"`
 	}
 )
@@ -32,6 +32,10 @@ func NewWrapper(wrapper model.Wrapper, orderID string) Wrapper {
 
 func (w Wrapper) Columns() []string {
 	return []string{"order_id", "type", "capacity_in_gram", "price_in_rub"}
+}
+
+func (w Wrapper) SelectColumns() []string {
+	return []string{"order_id", "type", "capacity_in_gram", "wrappers.price_in_rub as wrappers_price_in_rub"}
 }
 
 func (w Wrapper) Values() []any {

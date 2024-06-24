@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"github.com/shopspring/decimal"
 	"homework/internal/model"
 	"time"
 )
@@ -20,9 +21,10 @@ type (
 
 		ExpirationDate time.Time `db:"expiration_date"`
 
-		Hash         string    `db:"hash"`
-		CreatedAt    time.Time `db:"created_at"`
-		WeightInGram float64   `db:"weight_in_gram"`
+		Hash         string          `db:"hash"`
+		CreatedAt    time.Time       `db:"created_at"`
+		WeightInGram float64         `db:"weight_in_gram"`
+		PriceInRub   decimal.Decimal `db:"orders_price_in_rub"`
 	}
 )
 
@@ -35,6 +37,7 @@ func NewOrder(order model.Order, hash string) Order {
 		ExpirationDate:  order.ExpirationDate,
 		WeightInGram:    order.WeightInGram,
 		Hash:            hash,
+		PriceInRub:      decimal.Decimal(order.PriceInRub),
 		CreatedAt:       time.Now(),
 	}
 }
@@ -42,14 +45,21 @@ func NewOrder(order model.Order, hash string) Order {
 func (o Order) Columns() []string {
 	return []string{
 		"id", "recipient_id", "status", "status_updated_at",
-		"expiration_date", "hash", "created_at", "weight_in_gram",
+		"expiration_date", "hash", "created_at", "weight_in_gram", "price_in_rub",
+	}
+}
+
+func (o Order) SelectColumns() []string {
+	return []string{
+		"id", "recipient_id", "status", "status_updated_at",
+		"expiration_date", "hash", "created_at", "weight_in_gram", "orders.price_in_rub as orders_price_in_rub",
 	}
 }
 
 func (o Order) Values() []any {
 	return []any{
 		o.ID, o.RecipientID, o.Status, o.StatusUpdatedAt,
-		o.ExpirationDate, o.Hash, o.CreatedAt, o.WeightInGram,
+		o.ExpirationDate, o.Hash, o.CreatedAt, o.WeightInGram, o.PriceInRub,
 	}
 }
 
@@ -62,11 +72,6 @@ func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error
 			return model.Order{}, err
 		}
 
-		var priceInRub model.PriceInRub
-		if wrapper != nil {
-			priceInRub = wrapper.GetPriceInRub()
-		}
-
 		return model.Order{
 			ID:              order.ID,
 			RecipientID:     order.RecipientID,
@@ -74,7 +79,7 @@ func ExtractOrdersFromWrapperOrder(records []WrapperOrder) ([]model.Order, error
 			StatusUpdatedAt: order.StatusUpdatedAt,
 			ExpirationDate:  order.ExpirationDate,
 			WeightInGram:    order.WeightInGram,
-			PriceInRub:      priceInRub,
+			PriceInRub:      model.PriceInRub(order.PriceInRub),
 			Wrapper:         wrapper,
 		}, nil
 	})

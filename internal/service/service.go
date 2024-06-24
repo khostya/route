@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"homework/internal/model"
 	"homework/internal/storage/schema"
 	hash2 "homework/pkg/hash"
@@ -64,6 +65,11 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 		return errors.Wrap(ErrOrderWeightGreaterThanWrapperCapacity, message)
 	}
 
+	wrapperPriceInRub := model.PriceInRub(decimal.NewFromInt(0))
+	if order.Wrapper != nil {
+		wrapperPriceInRub = order.Wrapper.GetPriceInRub()
+	}
+
 	hash := hash2.GenerateHash()
 	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
 		err := o.orderStorage.AddOrder(ctx, model.Order{
@@ -73,6 +79,7 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 			StatusUpdatedAt: time.Now(),
 			ExpirationDate:  order.ExpirationDate,
 			WeightInGram:    order.WeightInGram,
+			PriceInRub:      order.PriceInRub.Add(wrapperPriceInRub),
 		}, hash)
 		if err != nil {
 			return err
