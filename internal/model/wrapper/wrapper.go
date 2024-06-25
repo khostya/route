@@ -22,7 +22,7 @@ var wrappers Wrappers = make(map[WrapperType]*Wrapper)
 func init() {
 	wrappersCFG, err := config.NewWrappersConfig()
 	if err != nil {
-		println(err)
+		panic(err)
 	}
 
 	for _, wrapper := range wrappersCFG.Wrappers {

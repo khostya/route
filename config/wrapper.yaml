@@ -1,6 +1,0 @@
-wrappers:
-  # type|capacity_in_gram|price_in_rub
-  # -1 = +∞
-  - box|30000|20
-  - package|10000|5
-  - stretch|-1|0

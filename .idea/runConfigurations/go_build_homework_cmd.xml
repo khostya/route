@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go build homework" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+  <configuration default="false" name="go build homework/cmd" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
     <module name="homework-1" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
       <env name="DATABASE_URL" value="postgres://postgres:password@localhost:5432/postgres?sslmode=disable" />
-      <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.yaml" />
+      <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.json" />
     </envs>
     <kind value="PACKAGE" />
     <package value="homework/cmd" />

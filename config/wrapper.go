@@ -4,15 +4,13 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"math"
 	"os"
-	"strconv"
-	"strings"
 )
 
 type (
 	Wrapper struct {
-		Type           string
-		CapacityInGram float64
-		PriceInRub     float64
+		Type           string  `json:"type"`
+		CapacityInGram float64 `json:"capacity_in_gram"`
+		PriceInRub     float64 `json:"price_in_rub"`
 	}
 
 	WrappersConfig struct {
@@ -26,41 +24,23 @@ func NewWrappersConfig() (WrappersConfig, error) {
 		return WrappersConfig{}, ErrWrappersConfigPathIsEmpty
 	}
 	var cfg WrappersConfig
-	return cfg, cleanenv.ReadConfig(path, &cfg)
-}
-
-func (w *Wrapper) UnmarshalText(text []byte) error {
-	tokens := strings.Split(string(text), "|")
-	if len(tokens) != 3 {
-		return ErrTokensLengthIsNotValid
+	err := cleanenv.ReadConfig(path, &cfg)
+	if err != nil {
+		return WrappersConfig{}, err
 	}
-	for _, v := range tokens {
-		if v == "" {
-			return ErrValueIsEmpty
+
+	for i, w := range cfg.Wrappers {
+		if w.PriceInRub < 0 {
+			return WrappersConfig{}, ErrPriceInRubIsNotValid
+		}
+		if w.CapacityInGram < -1 {
+			return WrappersConfig{}, ErrCapacityInGramInNotValid
+		}
+
+		if w.CapacityInGram == -1 {
+			cfg.Wrappers[i].CapacityInGram = math.Inf(1)
 		}
 	}
-	priceInRub, err := strconv.ParseFloat(tokens[2], 64)
-	if err != nil {
-		return err
-	}
-	if priceInRub < 0 {
-		return ErrPriceInRubIsNotValid
-	}
 
-	capacityInGram, err := strconv.ParseFloat(tokens[1], 64)
-	if err != nil {
-		return err
-	}
-	if capacityInGram < -1 {
-		return ErrCapacityInGramInNotValid
-	}
-
-	w.Type = tokens[0]
-	w.PriceInRub = priceInRub
-
-	if capacityInGram == -1 {
-		capacityInGram = math.Inf(1)
-	}
-	w.CapacityInGram = capacityInGram
-	return nil
+	return cfg, nil
 }
