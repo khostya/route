@@ -33,11 +33,11 @@ func NewWrappersConfig() (WrappersConfig, error) {
 		if w.PriceInRub < 0 {
 			return WrappersConfig{}, ErrPriceInRubIsNotValid
 		}
-		if w.CapacityInGram < -1 {
-			return WrappersConfig{}, ErrCapacityInGramInNotValid
+		if w.CapacityInGram < 0 {
+			return WrappersConfig{}, ErrCapacityInGramIsNotValid
 		}
 
-		if w.CapacityInGram == -1 {
+		if w.CapacityInGram == 0 {
 			cfg.Wrappers[i].CapacityInGram = math.Inf(1)
 		}
 	}

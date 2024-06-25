@@ -12,7 +12,7 @@
     },
     {
       "type": "stretch",
-      "capacity_in_gram": -1.0,
+      "capacity_in_gram": 0.0,
       "price_in_rub": 0.0
     }
   ]
