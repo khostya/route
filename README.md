@@ -27,6 +27,7 @@ procs --n=10
 exit
 ```
 ## Домашнее задание №4 «Выдача заказов в разной упаковке»
+Описание UML https://www.uml-diagrams.org/
 Открывать в https://app.diagrams.net/
 https://drive.google.com/file/d/1eI_kM_SfUT-Yih2sY3-p-XprEcHXEsOO/view?usp=sharing
 ### Цель:
