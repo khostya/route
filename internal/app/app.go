@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"homework/internal/cli"
 	"homework/internal/model"
 	"math"
 	"math/rand"
@@ -13,20 +12,27 @@ import (
 	"time"
 )
 
-type App struct {
-	cli           *cli.CLI
-	jobs          <-chan []string
-	numberWorkers int
+type (
+	cli interface {
+		Run(ctx context.Context, args []string) error
+		GetChangeNumberWorkers() <-chan int
+	}
 
-	stopWorker  chan struct{}
-	startWorker chan struct{}
+	App struct {
+		cli           cli
+		jobs          <-chan []string
+		numberWorkers int
 
-	wg sync.WaitGroup
+		stopWorker  chan struct{}
+		startWorker chan struct{}
 
-	isStarted atomic.Bool
-}
+		wg sync.WaitGroup
 
-func NewApp(commands *cli.CLI, jobs <-chan []string) *App {
+		isStarted atomic.Bool
+	}
+)
+
+func NewApp(commands cli, jobs <-chan []string) *App {
 	return &App{
 		stopWorker:  make(chan struct{}),
 		startWorker: make(chan struct{}),

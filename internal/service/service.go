@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"homework/internal/storage/schema"
 	hash2 "homework/pkg/hash"
 	"time"
@@ -25,6 +27,10 @@ type (
 		RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error)
 	}
 
+	wrapperStorage interface {
+		AddWrapper(ctx context.Context, order wrapper.Wrapper, orderID string) error
+	}
+
 	transactionManager interface {
 		RunRepeatableRead(ctx context.Context, fx func(ctxTX context.Context) error) error
 		Unwrap(err error) error
@@ -33,48 +39,78 @@ type (
 	Deps struct {
 		Storage            orderStorage
 		TransactionManager transactionManager
+		WrapperStorage     wrapperStorage
 	}
 
 	Order struct {
-		storage            orderStorage
+		orderStorage       orderStorage
 		transactionManager transactionManager
+		wrapperStorage     wrapperStorage
 	}
 )
 
 func NewOrder(d Deps) Order {
-	return Order{storage: d.Storage, transactionManager: d.TransactionManager}
+	return Order{
+		orderStorage:       d.Storage,
+		transactionManager: d.TransactionManager,
+		wrapperStorage:     d.WrapperStorage,
+	}
 }
 
 func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 	if order.ExpirationDate.Before(time.Now()) {
 		return ErrExpIsNotValid
 	}
+	if order.Wrapper != nil && !order.Wrapper.WillFitKg(order.WeightInGram/1000) {
+		message := fmt.Sprintf("capacity_in_kg = %v", order.Wrapper.GetCapacityInGram())
+		return errors.Wrap(ErrOrderWeightGreaterThanWrapperCapacity, message)
+	}
+
+	wrapperPriceInRub := wrapper.PriceInRub(decimal.NewFromInt(0))
+	if order.Wrapper != nil {
+		wrapperPriceInRub = order.Wrapper.GetPriceInRub()
+	}
 
 	hash := hash2.GenerateHash()
-	return o.storage.AddOrder(ctx, model.Order{
-		ID:              order.ID,
-		RecipientID:     order.RecipientID,
-		Status:          model.StatusDelivered,
-		StatusUpdatedAt: time.Now(),
-		ExpirationDate:  order.ExpirationDate,
-	}, hash)
+	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
+		err := o.orderStorage.AddOrder(ctx, model.Order{
+			ID:              order.ID,
+			RecipientID:     order.RecipientID,
+			Status:          model.StatusDelivered,
+			StatusUpdatedAt: time.Now(),
+			ExpirationDate:  order.ExpirationDate,
+			WeightInGram:    order.WeightInGram,
+			PriceInRub:      order.PriceInRub.Add(wrapperPriceInRub),
+		}, hash)
+		if err != nil {
+			return err
+		}
+
+		if order.Wrapper == nil {
+			return nil
+		}
+
+		return o.wrapperStorage.AddWrapper(ctx, *order.Wrapper, order.ID)
+	})
+
+	return o.transactionManager.Unwrap(err)
 }
 
 func (o *Order) ListUserOrders(ctx context.Context, userID string, count uint) ([]model.Order, error) {
 	_ = hash2.GenerateHash()
-	return o.storage.ListUserOrders(ctx, userID, count, model.StatusDelivered)
+	return o.orderStorage.ListUserOrders(ctx, userID, count, model.StatusDelivered)
 }
 
 func (o *Order) RefundedOrders(ctx context.Context, param RefundedOrdersParam) ([]model.Order, error) {
 	_ = hash2.GenerateHash()
-	return o.storage.RefundedOrders(ctx, schema.PageParam{Page: param.Page, Size: param.Size})
+	return o.orderStorage.RefundedOrders(ctx, schema.PageParam{Page: param.Page, Size: param.Size})
 }
 
 func (o *Order) ReturnOrder(ctx context.Context, id string) error {
 	_ = hash2.GenerateHash()
 
 	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
-		order, err := o.storage.GetOrderById(ctx, id)
+		order, err := o.orderStorage.GetOrderById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -86,7 +122,7 @@ func (o *Order) ReturnOrder(ctx context.Context, id string) error {
 			return ErrOrderHasNotExpired
 		}
 
-		return o.storage.DeleteOrder(ctx, id)
+		return o.orderStorage.DeleteOrder(ctx, id)
 	})
 	return o.transactionManager.Unwrap(err)
 }
@@ -98,7 +134,7 @@ func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
 	}
 
 	err = o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
-		orders, err := o.storage.ListOrdersByIds(ctx, ids, model.StatusDelivered)
+		orders, err := o.orderStorage.ListOrdersByIds(ctx, ids, model.StatusDelivered)
 		if err != nil {
 			return err
 		}
@@ -122,7 +158,7 @@ func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
 			return errors.Wrapf(ErrOrderHasExpired, fmt.Sprintf("id = %s", order.ID))
 		}
 
-		return o.storage.UpdateStatus(ctx, hashes, model.StatusIssued)
+		return o.orderStorage.UpdateStatus(ctx, hashes, model.StatusIssued)
 	})
 	return o.transactionManager.Unwrap(err)
 }
@@ -134,7 +170,7 @@ func (o *Order) RefundOrder(ctx context.Context, param RefundOrderParam) error {
 	}
 
 	err = o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
-		order, err := o.storage.GetOrderById(ctx, param.ID)
+		order, err := o.orderStorage.GetOrderById(ctx, param.ID)
 		if err != nil {
 			return err
 		}
@@ -147,7 +183,7 @@ func (o *Order) RefundOrder(ctx context.Context, param RefundOrderParam) error {
 			return ErrRefundPeriodHasExpired
 		}
 
-		return o.storage.UpdateStatus(ctx, hashes, model.StatusRefunded)
+		return o.orderStorage.UpdateStatus(ctx, hashes, model.StatusRefunded)
 	})
 	return o.transactionManager.Unwrap(err)
 }

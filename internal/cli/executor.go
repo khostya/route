@@ -3,9 +3,12 @@ package cli
 import (
 	"context"
 	"flag"
+	"github.com/shopspring/decimal"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"homework/internal/service"
 	"math"
+	"slices"
 	"strings"
 	"time"
 )
@@ -75,14 +78,20 @@ func (e Executor) returnOrder(ctx context.Context, args []string) string {
 
 func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	var (
-		ID, userID string
-		expString  string
+		ID, userID        string
+		expString         string
+		wrapperType       string
+		weightInKg        float64
+		priceInRubFloat64 float64
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
 	fs.StringVar(&expString, expParam, "", expString)
 	fs.StringVar(&userID, userIdParam, "", userID)
 	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
+	fs.StringVar(&wrapperType, wrapperParam, "", wrapperParamUsage)
+	fs.Float64Var(&weightInKg, weightInKgParam, 0, weightInKgUsage)
+	fs.Float64Var(&priceInRubFloat64, priceInRubParam, 0, priceInRubParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return err.Error()
 	}
@@ -96,9 +105,26 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	if userID == "" {
 		return ErrUserIsEmpty.Error()
 	}
+	if weightInKg <= 0 {
+		return ErrWeightInKgInNotValid.Error()
+	}
+	if priceInRubFloat64 < 0 {
+		return ErrPriceInRubIsNotValid.Error()
+	}
+
+	priceInRub := wrapper.PriceInRub(decimal.NewFromFloat(priceInRubFloat64))
+	wrapperIsEmpty := wrapperType == ""
+	if !wrapperIsEmpty && !slices.Contains(wrapper.GetAllWrapperTypes(), wrapper.WrapperType(wrapperType)) {
+		return ErrWrapperIsNotValid.Error()
+	}
 
 	exp, err := time.Parse(model.TimeFormat, expString)
 	if err != nil {
+		return err.Error()
+	}
+
+	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(wrapperType))
+	if !wrapperIsEmpty && err != nil {
 		return err.Error()
 	}
 
@@ -106,6 +132,9 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 		ID:             ID,
 		RecipientID:    userID,
 		ExpirationDate: exp,
+		WeightInGram:   weightInKg * 1000,
+		Wrapper:        wrapper,
+		PriceInRub:     priceInRub,
 	})
 	if err == nil {
 		return ""
@@ -171,9 +200,10 @@ func (e Executor) listRefunded(ctx context.Context, args []string) string {
 func (e Executor) stringOrders(orders []model.Order) string {
 	var builder strings.Builder
 
-	for _, order := range orders {
-		builder.WriteString(order.String())
+	for i := 0; i < len(orders)-1; i++ {
+		builder.WriteString(orders[i].String() + "\n")
 	}
+	builder.WriteString(orders[len(orders)-1].String())
 
 	return builder.String()
 }

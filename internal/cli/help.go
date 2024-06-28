@@ -3,11 +3,13 @@ package cli
 import (
 	"fmt"
 	"homework/internal/model"
+	"homework/internal/model/wrapper"
 	"time"
 )
 
 var (
-	deliverOrderUsage = fmt.Sprintf("%s %s %s %s", deliverOrder, orderIdParamUsage, userIdParamUsage, expParamUsage)
+	deliverOrderUsage = fmt.Sprintf("%s %s %s %s %s %s %s", deliverOrder, orderIdParamUsage, userIdParamUsage,
+		expParamUsage, wrapperParamUsage, weightInKgUsage, priceInRubParamUsage)
 	returnOrderUsage  = fmt.Sprintf("%s %s", returnOrder, orderIdParamUsage)
 	issueOrdersUsage  = fmt.Sprintf("%s %s", issueOrders, ordersIdsParamUsage)
 	listOrdersUsage   = fmt.Sprintf("%s %s %s", listOrders, userIdParamUsage, sizeParamUsage)
@@ -15,22 +17,28 @@ var (
 	listRefundedUsage = fmt.Sprintf("%s %s %s", listRefunded, sizeParamUsage, pageParamUsage)
 	workersUsage      = fmt.Sprintf("%s %s", workers, nParamUsage)
 
-	orderIdParamUsage   = fmt.Sprintf("--%s=1", orderIdParam)
-	userIdParamUsage    = fmt.Sprintf("--%s=1", userIdParam)
-	expParamUsage       = fmt.Sprintf("--%s=%s", expParam, time.Now().Add(time.Hour*2).Format(model.TimeFormat))
-	sizeParamUsage      = fmt.Sprintf("--%s=20", sizeParam)
-	pageParamUsage      = fmt.Sprintf("--%s=10", pageParam)
-	nParamUsage         = fmt.Sprintf("--%s=10", nParam)
-	ordersIdsParamUsage = "<id заказа 1> ... <id заказа N>"
+	priceInRubParamUsage = fmt.Sprintf("--%s=10.3", priceInRubParam)
+	wrapperParamUsage    = fmt.Sprintf("--%s=<%s>", wrapperParam, wrapper.GetAllWrapperTypes())
+	orderIdParamUsage    = fmt.Sprintf("--%s=1", orderIdParam)
+	userIdParamUsage     = fmt.Sprintf("--%s=1", userIdParam)
+	expParamUsage        = fmt.Sprintf("--%s=%s", expParam, time.Now().Add(time.Hour*2).Format(model.TimeFormat))
+	sizeParamUsage       = fmt.Sprintf("--%s=20", sizeParam)
+	pageParamUsage       = fmt.Sprintf("--%s=10", pageParam)
+	nParamUsage          = fmt.Sprintf("--%s=10", nParam)
+	weightInKgUsage      = fmt.Sprintf("--%s=10.3", weightInKgParam)
+	ordersIdsParamUsage  = "<id заказа 1> ... <id заказа N>"
 )
 
 const (
-	nParam       = "n"
-	pageParam    = "page"
-	sizeParam    = "size"
-	userIdParam  = "user"
-	expParam     = "exp"
-	orderIdParam = "id"
+	priceInRubParam = "price_in_rub"
+	weightInKgParam = "weight_in_kg"
+	wrapperParam    = "wrapper"
+	nParam          = "n"
+	pageParam       = "page"
+	sizeParam       = "size"
+	userIdParam     = "user"
+	expParam        = "exp"
+	orderIdParam    = "id"
 
 	helpDescription = "Cправка"
 

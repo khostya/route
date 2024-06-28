@@ -1,0 +1,19 @@
+{
+  "wrappers":[
+    {
+      "type": "box",
+      "capacity_in_gram": 30000.0,
+      "price_in_rub": 20.0
+    },
+    {
+      "type": "package",
+      "capacity_in_gram": 10000.0,
+      "price_in_rub": 5.0
+    },
+    {
+      "type": "stretch",
+      "capacity_in_gram": 0.0,
+      "price_in_rub": 0.0
+    }
+  ]
+}

@@ -24,7 +24,7 @@ type (
 	}
 )
 
-func NewStorage(provider transactor.QueryEngineProvider) *Storage {
+func NewOrderStorage(provider transactor.QueryEngineProvider) *Storage {
 	return &Storage{provider}
 }
 
@@ -43,7 +43,7 @@ func (s *Storage) getByStatus(ctx context.Context, status model.Status) ([]model
 
 func (s *Storage) AddOrder(ctx context.Context, order model.Order, hash string) error {
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
-	record := schema.NewRecord(order, hash)
+	record := schema.NewOrder(order, hash)
 	query := sq.Insert(orderTable).
 		Columns(record.Columns()...).
 		Values(record.Values()...).
@@ -72,9 +72,12 @@ func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	n := 1
 
-	query := sq.Select(schema.Record{}.Columns()...).
+	columns := append(schema.Wrapper{}.SelectColumns(), schema.Order{}.SelectColumns()...)
+	query := sq.Select(columns...).
 		From(orderTable).
+		LeftJoin("ozon.wrappers on wrappers.order_id = orders.id").
 		PlaceholderFormat(sq.Dollar)
+
 	if param.Status != "" {
 		query = query.Where(fmt.Sprintf("status = $%v", n), param.Status)
 		n++
@@ -102,12 +105,12 @@ func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order
 		return []model.Order{}, err
 	}
 
-	var records []schema.Record
+	var records []schema.WrapperOrder
 	if err := pgxscan.Select(ctx, db, &records, rawQuery, args...); err != nil {
 		return []model.Order{}, err
 	}
 
-	return schema.ExtractOrders(records), nil
+	return schema.ExtractOrdersFromWrapperOrder(records)
 }
 
 func (s *Storage) UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, status model.Status) error {
