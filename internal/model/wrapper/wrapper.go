@@ -61,8 +61,8 @@ func (w Wrapper) GetPriceInRub() PriceInRub {
 	return w.priceInRub
 }
 
-func (w Wrapper) WillFitKg(kg float64) bool {
-	return kg < float64(w.capacityInGram)
+func (w Wrapper) WillFitGram(gram float64) bool {
+	return gram < float64(w.capacityInGram)
 }
 
 func GetAllWrapperTypes() []WrapperType {

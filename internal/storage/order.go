@@ -19,29 +19,29 @@ const (
 )
 
 type (
-	Storage struct {
+	OrderStorage struct {
 		transactor.QueryEngineProvider
 	}
 )
 
-func NewOrderStorage(provider transactor.QueryEngineProvider) *Storage {
-	return &Storage{provider}
+func NewOrderStorage(provider transactor.QueryEngineProvider) *OrderStorage {
+	return &OrderStorage{provider}
 }
 
-func (s *Storage) RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error) {
+func (s *OrderStorage) RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error) {
 	offset := get.Size * get.Page
 	return s.get(ctx, schema.GetParam{Limit: get.Size, Offset: offset, Status: model.StatusRefunded, Order: desc})
 }
 
-func (s *Storage) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
+func (s *OrderStorage) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
 	return s.get(ctx, schema.GetParam{Status: status, Limit: count, RecipientId: userId, Order: desc})
 }
 
-func (s *Storage) getByStatus(ctx context.Context, status model.Status) ([]model.Order, error) {
+func (s *OrderStorage) getByStatus(ctx context.Context, status model.Status) ([]model.Order, error) {
 	return s.get(ctx, schema.GetParam{Status: status})
 }
 
-func (s *Storage) AddOrder(ctx context.Context, order model.Order, hash string) error {
+func (s *OrderStorage) AddOrder(ctx context.Context, order model.Order, hash string) error {
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	record := schema.NewOrder(order, hash)
 	query := sq.Insert(orderTable).
@@ -64,11 +64,11 @@ func (s *Storage) AddOrder(ctx context.Context, order model.Order, hash string) 
 	return err
 }
 
-func (s *Storage) ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error) {
+func (s *OrderStorage) ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error) {
 	return s.get(ctx, schema.GetParam{Ids: ids, Status: status})
 }
 
-func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order, error) {
+func (s *OrderStorage) get(ctx context.Context, param schema.GetParam) ([]model.Order, error) {
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	n := 1
 
@@ -113,7 +113,7 @@ func (s *Storage) get(ctx context.Context, param schema.GetParam) ([]model.Order
 	return schema.ExtractOrdersFromWrapperOrder(records)
 }
 
-func (s *Storage) UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, status model.Status) error {
+func (s *OrderStorage) UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, status model.Status) error {
 	var setCases strings.Builder
 	setCases.WriteString("case\n")
 	for i, id := range ids.Ids {
@@ -141,7 +141,7 @@ func (s *Storage) UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, st
 	return err
 }
 
-func (s *Storage) GetOrderById(ctx context.Context, id string) (model.Order, error) {
+func (s *OrderStorage) GetOrderById(ctx context.Context, id string) (model.Order, error) {
 	orders, err := s.get(ctx, schema.GetParam{Ids: []string{id}})
 	if err != nil {
 		return model.Order{}, err
@@ -152,7 +152,7 @@ func (s *Storage) GetOrderById(ctx context.Context, id string) (model.Order, err
 	return model.Order{}, ErrNotFound
 }
 
-func (s *Storage) DeleteOrder(ctx context.Context, id string) error {
+func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 
 	query := sq.Delete(orderTable).

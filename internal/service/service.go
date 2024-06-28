@@ -29,6 +29,7 @@ type (
 
 	wrapperStorage interface {
 		AddWrapper(ctx context.Context, order wrapper.Wrapper, orderID string) error
+		Delete(ctx context.Context, orderID string) error
 	}
 
 	transactionManager interface {
@@ -61,8 +62,8 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 	if order.ExpirationDate.Before(time.Now()) {
 		return ErrExpIsNotValid
 	}
-	if order.Wrapper != nil && !order.Wrapper.WillFitKg(order.WeightInGram/1000) {
-		message := fmt.Sprintf("capacity_in_kg = %v", order.Wrapper.GetCapacityInGram())
+	if order.Wrapper != nil && !order.Wrapper.WillFitGram(order.WeightInGram) {
+		message := fmt.Sprintf("capacity_in_gram = %v", order.Wrapper.GetCapacityInGram())
 		return errors.Wrap(ErrOrderWeightGreaterThanWrapperCapacity, message)
 	}
 
@@ -96,9 +97,9 @@ func (o *Order) Deliver(ctx context.Context, order DeliverOrderParam) error {
 	return o.transactionManager.Unwrap(err)
 }
 
-func (o *Order) ListUserOrders(ctx context.Context, userID string, count uint) ([]model.Order, error) {
+func (o *Order) ListUserOrders(ctx context.Context, param ListUserOrdersParam) ([]model.Order, error) {
 	_ = hash2.GenerateHash()
-	return o.orderStorage.ListUserOrders(ctx, userID, count, model.StatusDelivered)
+	return o.orderStorage.ListUserOrders(ctx, param.UserId, param.Count, model.StatusDelivered)
 }
 
 func (o *Order) RefundedOrders(ctx context.Context, param RefundedOrdersParam) ([]model.Order, error) {
@@ -122,6 +123,11 @@ func (o *Order) ReturnOrder(ctx context.Context, id string) error {
 			return ErrOrderHasNotExpired
 		}
 
+		err = o.wrapperStorage.Delete(ctx, id)
+		if err != nil {
+			return err
+		}
+
 		return o.orderStorage.DeleteOrder(ctx, id)
 	})
 	return o.transactionManager.Unwrap(err)
@@ -139,7 +145,7 @@ func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
 			return err
 		}
 
-		if len(orders) > len(ids) {
+		if len(orders) < len(ids) {
 			return ErrExtraIDsInTheRequest
 		}
 
@@ -179,7 +185,7 @@ func (o *Order) RefundOrder(ctx context.Context, param RefundOrderParam) error {
 			return ErrOrderInPVZ
 		}
 
-		if order.StatusUpdatedAt.Sub(time.Now()) > refundPeriod {
+		if time.Now().Sub(order.StatusUpdatedAt) > refundPeriod {
 			return ErrRefundPeriodHasExpired
 		}
 

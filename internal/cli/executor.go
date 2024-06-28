@@ -13,11 +13,28 @@ import (
 	"time"
 )
 
-type Executor struct {
+type executor struct {
 	service orderService
 }
 
-func (e Executor) refundOrder(ctx context.Context, args []string) string {
+func newExecutor(service orderService) executor {
+	return executor{service: service}
+}
+
+func (e executor) refundOrder(ctx context.Context, args []string) string {
+	param, err := e.parseRefundOrder(args)
+	if err != nil {
+		return err.Error()
+	}
+
+	err = e.service.RefundOrder(ctx, param)
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
+func (e executor) parseRefundOrder(args []string) (service.RefundOrderParam, error) {
 	var (
 		ID, userID string
 	)
@@ -26,27 +43,23 @@ func (e Executor) refundOrder(ctx context.Context, args []string) string {
 	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
 	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
-		return err.Error()
+		return service.RefundOrderParam{}, err
 	}
 
 	if ID == "" {
-		return ErrIdIsEmpty.Error()
+		return service.RefundOrderParam{}, ErrIdIsEmpty
 	}
 	if userID == "" {
-		return ErrUserIsEmpty.Error()
+		return service.RefundOrderParam{}, ErrUserIsEmpty
 	}
 
-	err := e.service.RefundOrder(ctx, service.RefundOrderParam{
+	return service.RefundOrderParam{
 		ID:          ID,
 		RecipientID: userID,
-	})
-	if err == nil {
-		return ""
-	}
-	return err.Error()
+	}, nil
 }
 
-func (e Executor) issueOrders(ctx context.Context, args []string) string {
+func (e executor) issueOrders(ctx context.Context, args []string) string {
 	err := e.service.IssueOrders(ctx, args)
 	if err == nil {
 		return ""
@@ -54,29 +67,47 @@ func (e Executor) issueOrders(ctx context.Context, args []string) string {
 	return err.Error()
 }
 
-func (e Executor) returnOrder(ctx context.Context, args []string) string {
-	var (
-		ID string
-	)
-
-	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
-	if err := fs.Parse(args); err != nil {
+func (e executor) returnOrder(ctx context.Context, args []string) string {
+	id, err := e.parseReturnOrder(args)
+	if err != nil {
 		return err.Error()
 	}
 
-	if ID == "" {
-		return ErrIdIsEmpty.Error()
-	}
-
-	err := e.service.ReturnOrder(ctx, ID)
+	err = e.service.ReturnOrder(ctx, id)
 	if err == nil {
 		return ""
 	}
 	return err.Error()
 }
 
-func (e Executor) deliverOrder(ctx context.Context, args []string) string {
+func (e executor) parseReturnOrder(args []string) (string, error) {
+	var (
+		ID string
+	)
+
+	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
+	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
+	err := fs.Parse(args)
+	if ID == "" {
+		return "", ErrIdIsEmpty
+	}
+	return ID, err
+}
+
+func (e executor) deliverOrder(ctx context.Context, args []string) string {
+	param, err := e.parseDeliverOrder(args)
+	if err != nil {
+		return err.Error()
+	}
+
+	err = e.service.Deliver(ctx, param)
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
+func (e executor) parseDeliverOrder(args []string) (service.DeliverOrderParam, error) {
 	var (
 		ID, userID        string
 		expString         string
@@ -86,63 +117,73 @@ func (e Executor) deliverOrder(ctx context.Context, args []string) string {
 	)
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.StringVar(&expString, expParam, "", expString)
-	fs.StringVar(&userID, userIdParam, "", userID)
+	fs.StringVar(&expString, expParam, "", expParamUsage)
+	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
 	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
 	fs.StringVar(&wrapperType, wrapperParam, "", wrapperParamUsage)
 	fs.Float64Var(&weightInKg, weightInKgParam, 0, weightInKgUsage)
 	fs.Float64Var(&priceInRubFloat64, priceInRubParam, 0, priceInRubParamUsage)
 	if err := fs.Parse(args); err != nil {
-		return err.Error()
+		return service.DeliverOrderParam{}, err
 	}
 
 	if expString == "" {
-		return ErrExpIsEmpty.Error()
+		return service.DeliverOrderParam{}, ErrExpIsEmpty
 	}
 	if ID == "" {
-		return ErrIdIsEmpty.Error()
+		return service.DeliverOrderParam{}, ErrIdIsEmpty
 	}
 	if userID == "" {
-		return ErrUserIsEmpty.Error()
+		return service.DeliverOrderParam{}, ErrUserIsEmpty
 	}
 	if weightInKg <= 0 {
-		return ErrWeightInKgInNotValid.Error()
+		return service.DeliverOrderParam{}, ErrWeightInKgInNotValid
 	}
 	if priceInRubFloat64 < 0 {
-		return ErrPriceInRubIsNotValid.Error()
+		return service.DeliverOrderParam{}, ErrPriceInRubIsNotValid
 	}
 
 	priceInRub := wrapper.PriceInRub(decimal.NewFromFloat(priceInRubFloat64))
 	wrapperIsEmpty := wrapperType == ""
 	if !wrapperIsEmpty && !slices.Contains(wrapper.GetAllWrapperTypes(), wrapper.WrapperType(wrapperType)) {
-		return ErrWrapperIsNotValid.Error()
+		return service.DeliverOrderParam{}, ErrWrapperIsNotValid
 	}
 
 	exp, err := time.Parse(model.TimeFormat, expString)
 	if err != nil {
-		return err.Error()
+		return service.DeliverOrderParam{}, err
 	}
 
 	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(wrapperType))
 	if !wrapperIsEmpty && err != nil {
-		return err.Error()
+		return service.DeliverOrderParam{}, err
 	}
 
-	err = e.service.Deliver(ctx, service.DeliverOrderParam{
+	return service.DeliverOrderParam{
 		ID:             ID,
 		RecipientID:    userID,
 		ExpirationDate: exp,
 		WeightInGram:   weightInKg * 1000,
 		Wrapper:        wrapper,
 		PriceInRub:     priceInRub,
-	})
-	if err == nil {
-		return ""
-	}
-	return err.Error()
+	}, nil
 }
 
-func (e Executor) listOrders(ctx context.Context, args []string) string {
+func (e executor) listOrders(ctx context.Context, args []string) string {
+	param, err := e.parseListOrders(args)
+	if err != nil {
+		return err.Error()
+	}
+
+	list, err := e.service.ListUserOrders(ctx, param)
+	if err != nil {
+		return err.Error()
+	}
+
+	return e.stringOrders(list)
+}
+
+func (e executor) parseListOrders(args []string) (service.ListUserOrdersParam, error) {
 	var (
 		userID string
 		size   uint
@@ -153,51 +194,53 @@ func (e Executor) listOrders(ctx context.Context, args []string) string {
 	fs.UintVar(&size, sizeParam, math.MaxUint, sizeParamUsage)
 
 	if err := fs.Parse(args); err != nil {
-		return err.Error()
+		return service.ListUserOrdersParam{}, err
 	}
 
 	if userID == "" {
-		return ErrUserIsEmpty.Error()
+		return service.ListUserOrdersParam{}, ErrUserIsEmpty
 	}
 	if size <= 0 {
-		return ErrSizeIsNotValid.Error()
+		return service.ListUserOrdersParam{}, ErrSizeIsNotValid
 	}
 
-	list, err := e.service.ListUserOrders(ctx, userID, size)
+	return service.ListUserOrdersParam{UserId: userID, Count: size}, nil
+}
+
+func (e executor) listRefunded(ctx context.Context, args []string) string {
+	param, err := e.parseListRefunded(args)
+	if err != nil {
+		return err.Error()
+	}
+
+	list, err := e.service.RefundedOrders(ctx, param)
 	if err != nil {
 		return err.Error()
 	}
 	return e.stringOrders(list)
 }
 
-func (e Executor) listRefunded(ctx context.Context, args []string) string {
-	var (
-		size uint
-		page uint
-	)
+func (e executor) parseListRefunded(args []string) (service.RefundedOrdersParam, error) {
+	var param service.RefundedOrdersParam
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
-	fs.UintVar(&size, sizeParam, math.MaxUint, sizeParamUsage)
-	fs.UintVar(&page, pageParam, 1, pageParamUsage)
+	fs.UintVar(&param.Size, sizeParam, math.MaxUint, sizeParamUsage)
+	fs.UintVar(&param.Page, pageParam, 1, pageParamUsage)
 	if err := fs.Parse(args); err != nil {
-		return err.Error()
+		return param, err
 	}
 
-	if page <= 0 {
-		return ErrPageIsNotValid.Error()
+	if param.Page <= 0 {
+		return param, ErrPageIsNotValid
 	}
-	if size <= 0 {
-		return ErrSizeIsNotValid.Error()
+	if param.Size <= 0 {
+		return param, ErrSizeIsNotValid
 	}
 
-	list, err := e.service.RefundedOrders(ctx, service.RefundedOrdersParam{Page: page - 1, Size: size})
-	if err != nil {
-		return err.Error()
-	}
-	return e.stringOrders(list)
+	return param, nil
 }
 
-func (e Executor) stringOrders(orders []model.Order) string {
+func (e executor) stringOrders(orders []model.Order) string {
 	var builder strings.Builder
 
 	for i := 0; i < len(orders)-1; i++ {

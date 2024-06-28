@@ -15,7 +15,7 @@ func newHandler(name string, handle commandHandler) handler {
 }
 
 func newHandlers(service orderService) handlers {
-	executor := Executor{service: service}
+	executor := newExecutor(service)
 
 	return []handler{
 		newHandler(refundOrder, executor.refundOrder),

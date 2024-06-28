@@ -48,3 +48,7 @@ func extractWrapper(nullableWrapper NullableWrapper) *wrapper.Wrapper {
 	}
 	return wrapper.NewWrapper(*nullableWrapper.Type, *nullableWrapper.CapacityInGram, wrapper.PriceInRub(*nullableWrapper.PriceInRub))
 }
+
+func ExtractWrapper(w Wrapper) wrapper.Wrapper {
+	return *wrapper.NewWrapper(w.Type, w.CapacityInGram, wrapper.PriceInRub(w.PriceInRub))
+}
