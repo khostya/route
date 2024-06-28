@@ -35,28 +35,23 @@ func (e executor) refundOrder(ctx context.Context, args []string) string {
 }
 
 func (e executor) parseRefundOrder(args []string) (service.RefundOrderParam, error) {
-	var (
-		ID, userID string
-	)
+	var param service.RefundOrderParam
 
 	fs := flag.NewFlagSet(refundOrder, flag.ContinueOnError)
-	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
-	fs.StringVar(&ID, orderIdParam, "", orderIdParamUsage)
+	fs.StringVar(&param.RecipientID, userIdParam, "", userIdParamUsage)
+	fs.StringVar(&param.ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
 		return service.RefundOrderParam{}, err
 	}
 
-	if ID == "" {
+	if param.ID == "" {
 		return service.RefundOrderParam{}, ErrIdIsEmpty
 	}
-	if userID == "" {
+	if param.RecipientID == "" {
 		return service.RefundOrderParam{}, ErrUserIsEmpty
 	}
 
-	return service.RefundOrderParam{
-		ID:          ID,
-		RecipientID: userID,
-	}, nil
+	return param, nil
 }
 
 func (e executor) issueOrders(ctx context.Context, args []string) string {
@@ -184,27 +179,24 @@ func (e executor) listOrders(ctx context.Context, args []string) string {
 }
 
 func (e executor) parseListOrders(args []string) (service.ListUserOrdersParam, error) {
-	var (
-		userID string
-		size   uint
-	)
+	var param service.ListUserOrdersParam
 
 	fs := flag.NewFlagSet(listOrders, flag.ContinueOnError)
-	fs.StringVar(&userID, userIdParam, "", userIdParamUsage)
-	fs.UintVar(&size, sizeParam, math.MaxUint, sizeParamUsage)
+	fs.StringVar(&param.UserId, userIdParam, "", userIdParamUsage)
+	fs.UintVar(&param.Count, sizeParam, math.MaxUint, sizeParamUsage)
 
 	if err := fs.Parse(args); err != nil {
-		return service.ListUserOrdersParam{}, err
+		return param, err
 	}
 
-	if userID == "" {
-		return service.ListUserOrdersParam{}, ErrUserIsEmpty
+	if param.UserId == "" {
+		return param, ErrUserIsEmpty
 	}
-	if size <= 0 {
-		return service.ListUserOrdersParam{}, ErrSizeIsNotValid
+	if param.Count <= 0 {
+		return param, ErrSizeIsNotValid
 	}
 
-	return service.ListUserOrdersParam{UserId: userID, Count: size}, nil
+	return param, nil
 }
 
 func (e executor) listRefunded(ctx context.Context, args []string) string {

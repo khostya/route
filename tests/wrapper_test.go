@@ -70,6 +70,17 @@ func (s *WrapperTestSuite) TestGetWithOrder() {
 	require.EqualExportedValues(s.T(), deliveredOrder1, order)
 }
 
+func (s *WrapperTestSuite) TestDelete() {
+	err := db.CreateWrapper(s.ctx, deliveredOrder1, "131")
+	require.Nil(s.T(), err)
+
+	err = s.wrapperStorage.Delete(s.ctx, deliveredOrder1.ID)
+	require.Nil(s.T(), err)
+
+	_, err = s.wrapperStorage.GetByOrderId(s.ctx, deliveredOrder1.ID)
+	require.ErrorIs(s.T(), storage.ErrNotFound, err)
+}
+
 func (s *WrapperTestSuite) get(orderId string) (wrapper.Wrapper, error) {
 	return s.wrapperStorage.GetByOrderId(s.ctx, orderId)
 }
