@@ -1,25 +1,13 @@
-package schema
+package dto
 
-import "homework/internal/model"
+import (
+	"homework/pkg/hash"
+)
 
 type (
 	IdsWithHashes struct {
 		Ids    []string
 		Hashes []string
-	}
-
-	PageParam struct {
-		Size uint
-		Page uint
-	}
-
-	GetParam struct {
-		Ids         []string
-		Status      model.Status
-		Order       string
-		Limit       uint
-		RecipientId string
-		Offset      uint
 	}
 )
 
@@ -28,4 +16,12 @@ func NewIdsWithHashes(ids []string, hashes []string) (IdsWithHashes, error) {
 		return IdsWithHashes{Ids: ids, Hashes: hashes}, nil
 	}
 	return IdsWithHashes{}, ErrListWithHashesDifferentLength
+}
+
+func GenHashes(strings []string) (IdsWithHashes, error) {
+	var hashes []string
+	for i := 0; i < len(strings); i++ {
+		hashes = append(hashes, hash.GenerateHash())
+	}
+	return NewIdsWithHashes(strings, hashes)
 }

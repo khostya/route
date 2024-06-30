@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"github.com/shopspring/decimal"
+	"homework/internal/dto"
 	"homework/internal/model"
 	"homework/internal/model/wrapper"
-	"homework/internal/service"
 	"math"
 	"slices"
 	"strings"
@@ -34,21 +34,21 @@ func (e executor) refundOrder(ctx context.Context, args []string) string {
 	return err.Error()
 }
 
-func (e executor) parseRefundOrder(args []string) (service.RefundOrderParam, error) {
-	var param service.RefundOrderParam
+func (e executor) parseRefundOrder(args []string) (dto.RefundOrderParam, error) {
+	var param dto.RefundOrderParam
 
 	fs := flag.NewFlagSet(refundOrder, flag.ContinueOnError)
 	fs.StringVar(&param.RecipientID, userIdParam, "", userIdParamUsage)
 	fs.StringVar(&param.ID, orderIdParam, "", orderIdParamUsage)
 	if err := fs.Parse(args); err != nil {
-		return service.RefundOrderParam{}, err
+		return dto.RefundOrderParam{}, err
 	}
 
 	if param.ID == "" {
-		return service.RefundOrderParam{}, ErrIdIsEmpty
+		return dto.RefundOrderParam{}, ErrIdIsEmpty
 	}
 	if param.RecipientID == "" {
-		return service.RefundOrderParam{}, ErrUserIsEmpty
+		return dto.RefundOrderParam{}, ErrUserIsEmpty
 	}
 
 	return param, nil
@@ -102,7 +102,7 @@ func (e executor) deliverOrder(ctx context.Context, args []string) string {
 	return err.Error()
 }
 
-func (e executor) parseDeliverOrder(args []string) (service.DeliverOrderParam, error) {
+func (e executor) parseDeliverOrder(args []string) (dto.DeliverOrderParam, error) {
 	var (
 		ID, userID        string
 		expString         string
@@ -119,42 +119,42 @@ func (e executor) parseDeliverOrder(args []string) (service.DeliverOrderParam, e
 	fs.Float64Var(&weightInKg, weightInKgParam, 0, weightInKgUsage)
 	fs.Float64Var(&priceInRubFloat64, priceInRubParam, 0, priceInRubParamUsage)
 	if err := fs.Parse(args); err != nil {
-		return service.DeliverOrderParam{}, err
+		return dto.DeliverOrderParam{}, err
 	}
 
 	if expString == "" {
-		return service.DeliverOrderParam{}, ErrExpIsEmpty
+		return dto.DeliverOrderParam{}, ErrExpIsEmpty
 	}
 	if ID == "" {
-		return service.DeliverOrderParam{}, ErrIdIsEmpty
+		return dto.DeliverOrderParam{}, ErrIdIsEmpty
 	}
 	if userID == "" {
-		return service.DeliverOrderParam{}, ErrUserIsEmpty
+		return dto.DeliverOrderParam{}, ErrUserIsEmpty
 	}
 	if weightInKg <= 0 {
-		return service.DeliverOrderParam{}, ErrWeightInKgInNotValid
+		return dto.DeliverOrderParam{}, ErrWeightInKgInNotValid
 	}
 	if priceInRubFloat64 < 0 {
-		return service.DeliverOrderParam{}, ErrPriceInRubIsNotValid
+		return dto.DeliverOrderParam{}, ErrPriceInRubIsNotValid
 	}
 
 	priceInRub := wrapper.PriceInRub(decimal.NewFromFloat(priceInRubFloat64))
 	wrapperIsEmpty := wrapperType == ""
 	if !wrapperIsEmpty && !slices.Contains(wrapper.GetAllWrapperTypes(), wrapper.WrapperType(wrapperType)) {
-		return service.DeliverOrderParam{}, ErrWrapperIsNotValid
+		return dto.DeliverOrderParam{}, ErrWrapperIsNotValid
 	}
 
 	exp, err := time.Parse(model.TimeFormat, expString)
 	if err != nil {
-		return service.DeliverOrderParam{}, err
+		return dto.DeliverOrderParam{}, err
 	}
 
 	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(wrapperType))
 	if !wrapperIsEmpty && err != nil {
-		return service.DeliverOrderParam{}, err
+		return dto.DeliverOrderParam{}, err
 	}
 
-	return service.DeliverOrderParam{
+	return dto.DeliverOrderParam{
 		ID:             ID,
 		RecipientID:    userID,
 		ExpirationDate: exp,
@@ -178,8 +178,8 @@ func (e executor) listOrders(ctx context.Context, args []string) string {
 	return e.stringOrders(list)
 }
 
-func (e executor) parseListOrders(args []string) (service.ListUserOrdersParam, error) {
-	var param service.ListUserOrdersParam
+func (e executor) parseListOrders(args []string) (dto.ListUserOrdersParam, error) {
+	var param dto.ListUserOrdersParam
 
 	fs := flag.NewFlagSet(listOrders, flag.ContinueOnError)
 	fs.StringVar(&param.UserId, userIdParam, "", userIdParamUsage)
@@ -212,8 +212,8 @@ func (e executor) listRefunded(ctx context.Context, args []string) string {
 	return e.stringOrders(list)
 }
 
-func (e executor) parseListRefunded(args []string) (service.RefundedOrdersParam, error) {
-	var param service.RefundedOrdersParam
+func (e executor) parseListRefunded(args []string) (dto.PageParam, error) {
+	var param dto.PageParam
 
 	fs := flag.NewFlagSet(deliverOrder, flag.ContinueOnError)
 	fs.UintVar(&param.Size, sizeParam, math.MaxUint, sizeParamUsage)

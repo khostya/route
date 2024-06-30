@@ -5,6 +5,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"homework/internal/dto"
 	"homework/internal/model"
 	"homework/internal/model/wrapper"
 	mock_repository "homework/internal/storage/mocks"
@@ -14,8 +15,8 @@ import (
 )
 
 type mocks struct {
-	mockOrderRepository   *mock_repository.MockOrderRepo
-	mockWrapperRepository *mock_repository.MockWrapperRepo
+	mockOrderRepository   *mock_repository.MockorderRepo
+	mockWrapperRepository *mock_repository.MockwrapperRepo
 	mockTransactor        *mock_transactor.MockTransactor
 }
 
@@ -24,8 +25,8 @@ func newMocks(t *testing.T) mocks {
 
 	return mocks{
 		mockTransactor:        mock_transactor.NewMockTransactor(ctrl),
-		mockWrapperRepository: mock_repository.NewMockWrapperRepo(ctrl),
-		mockOrderRepository:   mock_repository.NewMockOrderRepo(ctrl),
+		mockWrapperRepository: mock_repository.NewMockwrapperRepo(ctrl),
+		mockOrderRepository:   mock_repository.NewMockorderRepo(ctrl),
 	}
 }
 
@@ -34,7 +35,7 @@ func TestService_Deliver(t *testing.T) {
 
 	type test struct {
 		name   string
-		input  DeliverOrderParam
+		input  dto.DeliverOrderParam
 		err    error
 		mockFn func(m mocks)
 	}
@@ -42,7 +43,7 @@ func TestService_Deliver(t *testing.T) {
 	tests := []test{
 		{
 			name: "exp is not valid",
-			input: DeliverOrderParam{
+			input: dto.DeliverOrderParam{
 				ID:             "1",
 				RecipientID:    "1",
 				ExpirationDate: time.Now().Add(-time.Minute * 10),
@@ -56,7 +57,7 @@ func TestService_Deliver(t *testing.T) {
 		},
 		{
 			name: "order weight greater than wrapper capacity",
-			input: DeliverOrderParam{
+			input: dto.DeliverOrderParam{
 				ID:             "1",
 				RecipientID:    "1",
 				ExpirationDate: time.Now().Add(time.Minute * 10),
@@ -71,7 +72,7 @@ func TestService_Deliver(t *testing.T) {
 		},
 		{
 			name: "ok",
-			input: DeliverOrderParam{
+			input: dto.DeliverOrderParam{
 				ID:             "1",
 				RecipientID:    "1",
 				ExpirationDate: time.Now().Add(time.Minute * 10),
@@ -91,7 +92,7 @@ func TestService_Deliver(t *testing.T) {
 		},
 		{
 			name: "ok without wrapper",
-			input: DeliverOrderParam{
+			input: dto.DeliverOrderParam{
 				ID:             "1",
 				RecipientID:    "1",
 				ExpirationDate: time.Now().Add(time.Minute * 10),
@@ -134,7 +135,7 @@ func TestService_ListUserOrders(t *testing.T) {
 
 	type test struct {
 		name   string
-		input  ListUserOrdersParam
+		input  dto.ListUserOrdersParam
 		err    error
 		mockFn func(m mocks)
 	}
@@ -143,7 +144,7 @@ func TestService_ListUserOrders(t *testing.T) {
 	tests := []test{
 		{
 			name:  "ok",
-			input: ListUserOrdersParam{UserId: "1", Count: 1},
+			input: dto.ListUserOrdersParam{UserId: "1", Count: 1},
 			mockFn: func(m mocks) {
 				m.mockOrderRepository.EXPECT().ListUserOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Times(1).Return([]model.Order{}, nil)
@@ -176,7 +177,7 @@ func TestService_RefundedOrders(t *testing.T) {
 
 	type test struct {
 		name   string
-		input  RefundedOrdersParam
+		input  dto.PageParam
 		err    error
 		mockFn func(m mocks)
 	}
@@ -185,7 +186,7 @@ func TestService_RefundedOrders(t *testing.T) {
 	tests := []test{
 		{
 			name:  "ok",
-			input: RefundedOrdersParam{Size: 1, Page: 1},
+			input: dto.PageParam{Size: 1, Page: 1},
 			mockFn: func(m mocks) {
 				m.mockOrderRepository.EXPECT().RefundedOrders(gomock.Any(), gomock.Any()).
 					Times(1).Return([]model.Order{}, nil)
@@ -307,7 +308,7 @@ func TestService_RefundOrder(t *testing.T) {
 
 	type test struct {
 		name   string
-		input  RefundOrderParam
+		input  dto.RefundOrderParam
 		err    error
 		mockFn func(m mocks)
 	}
@@ -316,7 +317,7 @@ func TestService_RefundOrder(t *testing.T) {
 	tests := []test{
 		{
 			name:  "order in pvz",
-			input: RefundOrderParam{ID: "1", RecipientID: "1"},
+			input: dto.RefundOrderParam{ID: "1", RecipientID: "1"},
 			mockFn: func(m mocks) {
 				m.mockOrderRepository.EXPECT().GetOrderById(gomock.Any(), gomock.Any()).
 					Times(1).Return(model.Order{Status: model.StatusDelivered}, nil)
@@ -331,7 +332,7 @@ func TestService_RefundOrder(t *testing.T) {
 		},
 		{
 			name:  "refund period has expired",
-			input: RefundOrderParam{ID: "1", RecipientID: "1"},
+			input: dto.RefundOrderParam{ID: "1", RecipientID: "1"},
 			mockFn: func(m mocks) {
 				m.mockOrderRepository.EXPECT().GetOrderById(gomock.Any(), gomock.Any()).
 					Times(1).Return(model.Order{
@@ -349,7 +350,7 @@ func TestService_RefundOrder(t *testing.T) {
 		},
 		{
 			name:  "ok",
-			input: RefundOrderParam{ID: "1", RecipientID: "1"},
+			input: dto.RefundOrderParam{ID: "1", RecipientID: "1"},
 			mockFn: func(m mocks) {
 				m.mockOrderRepository.EXPECT().GetOrderById(gomock.Any(), gomock.Any()).
 					Times(1).Return(model.Order{

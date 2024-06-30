@@ -11,39 +11,39 @@ package mock_repository
 
 import (
 	context "context"
+	dto "homework/internal/dto"
 	model "homework/internal/model"
 	wrapper "homework/internal/model/wrapper"
-	schema "homework/internal/storage/schema"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockOrderRepo is a mock of OrderRepo interface.
-type MockOrderRepo struct {
+// MockorderRepo is a mock of orderRepo interface.
+type MockorderRepo struct {
 	ctrl     *gomock.Controller
-	recorder *MockOrderRepoMockRecorder
+	recorder *MockorderRepoMockRecorder
 }
 
-// MockOrderRepoMockRecorder is the mock recorder for MockOrderRepo.
-type MockOrderRepoMockRecorder struct {
-	mock *MockOrderRepo
+// MockorderRepoMockRecorder is the mock recorder for MockorderRepo.
+type MockorderRepoMockRecorder struct {
+	mock *MockorderRepo
 }
 
-// NewMockOrderRepo creates a new mock instance.
-func NewMockOrderRepo(ctrl *gomock.Controller) *MockOrderRepo {
-	mock := &MockOrderRepo{ctrl: ctrl}
-	mock.recorder = &MockOrderRepoMockRecorder{mock}
+// NewMockorderRepo creates a new mock instance.
+func NewMockorderRepo(ctrl *gomock.Controller) *MockorderRepo {
+	mock := &MockorderRepo{ctrl: ctrl}
+	mock.recorder = &MockorderRepoMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockOrderRepo) EXPECT() *MockOrderRepoMockRecorder {
+func (m *MockorderRepo) EXPECT() *MockorderRepoMockRecorder {
 	return m.recorder
 }
 
 // AddOrder mocks base method.
-func (m *MockOrderRepo) AddOrder(ctx context.Context, order model.Order, hash string) error {
+func (m *MockorderRepo) AddOrder(ctx context.Context, order model.Order, hash string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddOrder", ctx, order, hash)
 	ret0, _ := ret[0].(error)
@@ -51,13 +51,13 @@ func (m *MockOrderRepo) AddOrder(ctx context.Context, order model.Order, hash st
 }
 
 // AddOrder indicates an expected call of AddOrder.
-func (mr *MockOrderRepoMockRecorder) AddOrder(ctx, order, hash any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) AddOrder(ctx, order, hash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrder", reflect.TypeOf((*MockOrderRepo)(nil).AddOrder), ctx, order, hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrder", reflect.TypeOf((*MockorderRepo)(nil).AddOrder), ctx, order, hash)
 }
 
 // DeleteOrder mocks base method.
-func (m *MockOrderRepo) DeleteOrder(ctx context.Context, id string) error {
+func (m *MockorderRepo) DeleteOrder(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteOrder", ctx, id)
 	ret0, _ := ret[0].(error)
@@ -65,13 +65,13 @@ func (m *MockOrderRepo) DeleteOrder(ctx context.Context, id string) error {
 }
 
 // DeleteOrder indicates an expected call of DeleteOrder.
-func (mr *MockOrderRepoMockRecorder) DeleteOrder(ctx, id any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) DeleteOrder(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrder", reflect.TypeOf((*MockOrderRepo)(nil).DeleteOrder), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrder", reflect.TypeOf((*MockorderRepo)(nil).DeleteOrder), ctx, id)
 }
 
 // GetOrderById mocks base method.
-func (m *MockOrderRepo) GetOrderById(ctx context.Context, id string) (model.Order, error) {
+func (m *MockorderRepo) GetOrderById(ctx context.Context, id string) (model.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrderById", ctx, id)
 	ret0, _ := ret[0].(model.Order)
@@ -80,13 +80,13 @@ func (m *MockOrderRepo) GetOrderById(ctx context.Context, id string) (model.Orde
 }
 
 // GetOrderById indicates an expected call of GetOrderById.
-func (mr *MockOrderRepoMockRecorder) GetOrderById(ctx, id any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) GetOrderById(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderById", reflect.TypeOf((*MockOrderRepo)(nil).GetOrderById), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderById", reflect.TypeOf((*MockorderRepo)(nil).GetOrderById), ctx, id)
 }
 
 // ListOrdersByIds mocks base method.
-func (m *MockOrderRepo) ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error) {
+func (m *MockorderRepo) ListOrdersByIds(ctx context.Context, ids []string, status model.Status) ([]model.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListOrdersByIds", ctx, ids, status)
 	ret0, _ := ret[0].([]model.Order)
@@ -95,13 +95,13 @@ func (m *MockOrderRepo) ListOrdersByIds(ctx context.Context, ids []string, statu
 }
 
 // ListOrdersByIds indicates an expected call of ListOrdersByIds.
-func (mr *MockOrderRepoMockRecorder) ListOrdersByIds(ctx, ids, status any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) ListOrdersByIds(ctx, ids, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOrdersByIds", reflect.TypeOf((*MockOrderRepo)(nil).ListOrdersByIds), ctx, ids, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOrdersByIds", reflect.TypeOf((*MockorderRepo)(nil).ListOrdersByIds), ctx, ids, status)
 }
 
 // ListUserOrders mocks base method.
-func (m *MockOrderRepo) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
+func (m *MockorderRepo) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListUserOrders", ctx, userId, count, status)
 	ret0, _ := ret[0].([]model.Order)
@@ -110,13 +110,13 @@ func (m *MockOrderRepo) ListUserOrders(ctx context.Context, userId string, count
 }
 
 // ListUserOrders indicates an expected call of ListUserOrders.
-func (mr *MockOrderRepoMockRecorder) ListUserOrders(ctx, userId, count, status any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) ListUserOrders(ctx, userId, count, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserOrders", reflect.TypeOf((*MockOrderRepo)(nil).ListUserOrders), ctx, userId, count, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserOrders", reflect.TypeOf((*MockorderRepo)(nil).ListUserOrders), ctx, userId, count, status)
 }
 
 // RefundedOrders mocks base method.
-func (m *MockOrderRepo) RefundedOrders(ctx context.Context, get schema.PageParam) ([]model.Order, error) {
+func (m *MockorderRepo) RefundedOrders(ctx context.Context, get dto.PageParam) ([]model.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefundedOrders", ctx, get)
 	ret0, _ := ret[0].([]model.Order)
@@ -125,13 +125,13 @@ func (m *MockOrderRepo) RefundedOrders(ctx context.Context, get schema.PageParam
 }
 
 // RefundedOrders indicates an expected call of RefundedOrders.
-func (mr *MockOrderRepoMockRecorder) RefundedOrders(ctx, get any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) RefundedOrders(ctx, get any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefundedOrders", reflect.TypeOf((*MockOrderRepo)(nil).RefundedOrders), ctx, get)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefundedOrders", reflect.TypeOf((*MockorderRepo)(nil).RefundedOrders), ctx, get)
 }
 
 // UpdateStatus mocks base method.
-func (m *MockOrderRepo) UpdateStatus(ctx context.Context, ids schema.IdsWithHashes, status model.Status) error {
+func (m *MockorderRepo) UpdateStatus(ctx context.Context, ids dto.IdsWithHashes, status model.Status) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateStatus", ctx, ids, status)
 	ret0, _ := ret[0].(error)
@@ -139,36 +139,36 @@ func (m *MockOrderRepo) UpdateStatus(ctx context.Context, ids schema.IdsWithHash
 }
 
 // UpdateStatus indicates an expected call of UpdateStatus.
-func (mr *MockOrderRepoMockRecorder) UpdateStatus(ctx, ids, status any) *gomock.Call {
+func (mr *MockorderRepoMockRecorder) UpdateStatus(ctx, ids, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockOrderRepo)(nil).UpdateStatus), ctx, ids, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockorderRepo)(nil).UpdateStatus), ctx, ids, status)
 }
 
-// MockWrapperRepo is a mock of WrapperRepo interface.
-type MockWrapperRepo struct {
+// MockwrapperRepo is a mock of wrapperRepo interface.
+type MockwrapperRepo struct {
 	ctrl     *gomock.Controller
-	recorder *MockWrapperRepoMockRecorder
+	recorder *MockwrapperRepoMockRecorder
 }
 
-// MockWrapperRepoMockRecorder is the mock recorder for MockWrapperRepo.
-type MockWrapperRepoMockRecorder struct {
-	mock *MockWrapperRepo
+// MockwrapperRepoMockRecorder is the mock recorder for MockwrapperRepo.
+type MockwrapperRepoMockRecorder struct {
+	mock *MockwrapperRepo
 }
 
-// NewMockWrapperRepo creates a new mock instance.
-func NewMockWrapperRepo(ctrl *gomock.Controller) *MockWrapperRepo {
-	mock := &MockWrapperRepo{ctrl: ctrl}
-	mock.recorder = &MockWrapperRepoMockRecorder{mock}
+// NewMockwrapperRepo creates a new mock instance.
+func NewMockwrapperRepo(ctrl *gomock.Controller) *MockwrapperRepo {
+	mock := &MockwrapperRepo{ctrl: ctrl}
+	mock.recorder = &MockwrapperRepoMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockWrapperRepo) EXPECT() *MockWrapperRepoMockRecorder {
+func (m *MockwrapperRepo) EXPECT() *MockwrapperRepoMockRecorder {
 	return m.recorder
 }
 
 // AddWrapper mocks base method.
-func (m *MockWrapperRepo) AddWrapper(ctx context.Context, wrapper wrapper.Wrapper, orderId string) error {
+func (m *MockwrapperRepo) AddWrapper(ctx context.Context, wrapper wrapper.Wrapper, orderId string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddWrapper", ctx, wrapper, orderId)
 	ret0, _ := ret[0].(error)
@@ -176,13 +176,13 @@ func (m *MockWrapperRepo) AddWrapper(ctx context.Context, wrapper wrapper.Wrappe
 }
 
 // AddWrapper indicates an expected call of AddWrapper.
-func (mr *MockWrapperRepoMockRecorder) AddWrapper(ctx, wrapper, orderId any) *gomock.Call {
+func (mr *MockwrapperRepoMockRecorder) AddWrapper(ctx, wrapper, orderId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddWrapper", reflect.TypeOf((*MockWrapperRepo)(nil).AddWrapper), ctx, wrapper, orderId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddWrapper", reflect.TypeOf((*MockwrapperRepo)(nil).AddWrapper), ctx, wrapper, orderId)
 }
 
 // Delete mocks base method.
-func (m *MockWrapperRepo) Delete(ctx context.Context, orderID string) error {
+func (m *MockwrapperRepo) Delete(ctx context.Context, orderID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", ctx, orderID)
 	ret0, _ := ret[0].(error)
@@ -190,7 +190,7 @@ func (m *MockWrapperRepo) Delete(ctx context.Context, orderID string) error {
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockWrapperRepoMockRecorder) Delete(ctx, orderID any) *gomock.Call {
+func (mr *MockwrapperRepoMockRecorder) Delete(ctx, orderID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockWrapperRepo)(nil).Delete), ctx, orderID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockwrapperRepo)(nil).Delete), ctx, orderID)
 }

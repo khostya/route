@@ -6,9 +6,9 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"homework/internal/dto"
 	"homework/internal/model"
 	"homework/internal/storage"
-	"homework/internal/storage/schema"
 	"homework/internal/storage/transactor"
 	"testing"
 )
@@ -58,7 +58,7 @@ func (s *OrderTestSuite) TestUpdateStatus() {
 	err := db.CreateOrder(s.ctx, deliveredOrderWithoutWrapper1, "131")
 	require.Nil(s.T(), err)
 
-	hashes := schema.IdsWithHashes{Ids: []string{deliveredOrderWithoutWrapper1.ID}, Hashes: []string{"311"}}
+	hashes := dto.IdsWithHashes{Ids: []string{deliveredOrderWithoutWrapper1.ID}, Hashes: []string{"311"}}
 	err = s.orderStorage.UpdateStatus(s.ctx, hashes, model.StatusIssued)
 	require.Nil(s.T(), err)
 
