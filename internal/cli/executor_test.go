@@ -17,7 +17,7 @@ func newMocks(t *testing.T) mocks {
 	return mocks{mockOrderService: mock_service.NewMockorderService(ctrl)}
 }
 
-func TestExecutor_parceRefundOrder(t *testing.T) {
+func TestExecutor_parseRefundOrder(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
