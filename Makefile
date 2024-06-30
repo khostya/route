@@ -52,3 +52,11 @@ test-db-up:
 .PHONY: .test-db-down
 test-db-down:
 	docker compose down
+
+.PHONY: .unit-tests
+unit-tests:
+	ENV=test go test ./...
+
+.PHONY: .integration-tests
+integration-tests:
+	ENV=test TEST_DATABASE_URL=$(DEFAULT_TEST_PG_URL) go test ./... -tags=integration
