@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"context"
 	"homework/tests/postgresql"
 	"os"
 	"testing"
@@ -17,6 +18,8 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
+	db.TruncateTable(context.Background(), wrapperTable, orderTable)
 	db.Close()
+
 	os.Exit(code)
 }

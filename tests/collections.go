@@ -14,9 +14,9 @@ const (
 	wrapperTable = "ozon.wrappers"
 )
 
-var (
-	deliveredOrderWithoutWrapper1 = model.Order{
-		ID:              "1",
+func NewDeliveredOrderWithoutWrapper(id string) model.Order {
+	return model.Order{
+		ID:              id,
 		RecipientID:     "1",
 		Status:          model.StatusDelivered,
 		StatusUpdatedAt: time.Now(),
@@ -24,9 +24,11 @@ var (
 		WeightInGram:    1,
 		PriceInRub:      wrapper.PriceInRub(decimal.NewFromInt(2)),
 	}
+}
 
-	deliveredOrder1 = model.Order{
-		ID:              "1",
+func NewDeliveredOrder(id string) model.Order {
+	return model.Order{
+		ID:              id,
 		RecipientID:     "1",
 		Status:          model.StatusDelivered,
 		StatusUpdatedAt: time.Now(),
@@ -35,4 +37,4 @@ var (
 		Wrapper:         wrapper.NewWrapper("box", 1, wrapper.PriceInRub(decimal.NewFromInt(1))),
 		PriceInRub:      wrapper.PriceInRub(decimal.NewFromInt(2)),
 	}
-)
+}

@@ -7,7 +7,6 @@ import (
 	pool "homework/pkg/postgres"
 	"os"
 	"strings"
-	"testing"
 )
 
 type DBPool struct {
@@ -27,17 +26,10 @@ func NewFromEnv() *DBPool {
 	return &DBPool{pool: pool}
 }
 
-func (d *DBPool) SetUp(t *testing.T, tableName ...string) {
-	t.Helper()
-	d.truncateTable(context.Background(), tableName...)
-}
-
-func (d *DBPool) TearDown(t *testing.T) {
-	t.Helper()
-}
-
-func (d *DBPool) truncateTable(ctx context.Context, tableName ...string) {
-
+func (d *DBPool) TruncateTable(ctx context.Context, tableName ...string) {
+	if len(tableName) == 0 {
+		return
+	}
 	q := fmt.Sprintf("TRUNCATE %s", strings.Join(tableName, ","))
 	if _, err := d.pool.Exec(ctx, q); err != nil {
 		panic(err)

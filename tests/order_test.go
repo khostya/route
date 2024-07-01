@@ -10,6 +10,7 @@ import (
 	"homework/internal/model"
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
+	"homework/tests/ids"
 	"testing"
 )
 
@@ -17,6 +18,7 @@ type OrderTestSuite struct {
 	suite.Suite
 	ctx          context.Context
 	orderStorage *storage.OrderStorage
+	transactor   transactor.TransactionManager
 }
 
 func TestOrders(t *testing.T) {
@@ -24,30 +26,29 @@ func TestOrders(t *testing.T) {
 }
 
 func (s *OrderTestSuite) SetupSuite() {
-	transactor := transactor.NewTransactionManager(db.GetPool())
-	s.orderStorage = storage.NewOrderStorage(&transactor)
+	s.T().Parallel()
+	s.transactor = transactor.NewTransactionManager(db.GetPool())
+	s.orderStorage = storage.NewOrderStorage(&s.transactor)
 	s.ctx = context.Background()
 }
 
 func (s *OrderTestSuite) SetupTest() {
-	db.SetUp(s.T(), wrapperTable, orderTable)
-}
-
-func (s *OrderTestSuite) TearDownTest() {
-	db.TearDown(s.T())
+	s.T().Parallel()
 }
 
 func (s *OrderTestSuite) TestCreate() {
-	err := s.orderStorage.AddOrder(s.ctx, deliveredOrderWithoutWrapper1, "131")
+	order := NewDeliveredOrderWithoutWrapper(ids.NextID())
+	err := s.orderStorage.AddOrder(s.ctx, order, "131")
 	require.Nil(s.T(), err)
 }
 
 func (s *OrderTestSuite) TestGet() {
-	err := db.CreateOrder(s.ctx, deliveredOrderWithoutWrapper1, "131")
+	order := NewDeliveredOrderWithoutWrapper(ids.NextID())
+	err := db.CreateOrder(s.ctx, order, "131")
 	require.Nil(s.T(), err)
 
-	order, err := s.get(deliveredOrderWithoutWrapper1.ID)
-	require.EqualExportedValues(s.T(), deliveredOrderWithoutWrapper1, order)
+	response, err := s.get(order.ID)
+	require.EqualExportedValues(s.T(), order, response)
 }
 
 func (s *OrderTestSuite) get(id string) (model.Order, error) {
@@ -55,25 +56,27 @@ func (s *OrderTestSuite) get(id string) (model.Order, error) {
 }
 
 func (s *OrderTestSuite) TestUpdateStatus() {
-	err := db.CreateOrder(s.ctx, deliveredOrderWithoutWrapper1, "131")
+	order := NewDeliveredOrderWithoutWrapper(ids.NextID())
+	err := db.CreateOrder(s.ctx, order, "131")
 	require.Nil(s.T(), err)
 
-	hashes := dto.IdsWithHashes{Ids: []string{deliveredOrderWithoutWrapper1.ID}, Hashes: []string{"311"}}
+	hashes := dto.IdsWithHashes{Ids: []string{order.ID}, Hashes: []string{"311"}}
 	err = s.orderStorage.UpdateStatus(s.ctx, hashes, model.StatusIssued)
 	require.Nil(s.T(), err)
 
-	order, err := s.get(deliveredOrderWithoutWrapper1.ID)
+	response, err := s.get(order.ID)
 	require.Nil(s.T(), err)
-	require.Equal(s.T(), model.StatusIssued, order.Status)
+	require.Equal(s.T(), model.StatusIssued, response.Status)
 }
 
 func (s *OrderTestSuite) TestDelete() {
-	err := db.CreateOrder(s.ctx, deliveredOrderWithoutWrapper1, "131")
+	order := NewDeliveredOrderWithoutWrapper(ids.NextID())
+	err := db.CreateOrder(s.ctx, order, "131")
 	require.Nil(s.T(), err)
 
-	err = s.orderStorage.DeleteOrder(s.ctx, deliveredOrderWithoutWrapper1.ID)
+	err = s.orderStorage.DeleteOrder(s.ctx, order.ID)
 	require.Nil(s.T(), err)
 
-	_, err = s.get(deliveredOrderWithoutWrapper1.ID)
+	_, err = s.get(order.ID)
 	require.ErrorIs(s.T(), storage.ErrNotFound, err)
 }
