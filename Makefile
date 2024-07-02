@@ -29,7 +29,7 @@ generate-mockgen:
 	make generate-ifacemaker
 	go generate -x -run=mockgen ./...
 
-.PHONY: .ifacemaker
+.PHONY: .generate-ifacemaker
 generate-ifacemaker:
 	ifacemaker -f ./internal/service/order.go -s Order -i orderService -p mock_service -c "DONT EDIT: Auto generated" -o ./internal/service/mocks/order.go
 	ifacemaker -f ./internal/storage/wrapper.go -s WrapperStorage -i wrapperStorage -p mock_repository -c "DONT EDIT: Auto generated" -o ./internal/storage/mocks/wrapper.go
