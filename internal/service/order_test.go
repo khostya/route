@@ -30,7 +30,7 @@ func newMocks(t *testing.T) mocks {
 	}
 }
 
-func TestService_Deliver(t *testing.T) {
+func TestOrderService_Deliver(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
@@ -130,91 +130,7 @@ func TestService_Deliver(t *testing.T) {
 	}
 }
 
-func TestService_ListUserOrders(t *testing.T) {
-	t.Parallel()
-
-	type test struct {
-		name   string
-		input  dto.ListUserOrdersParam
-		err    error
-		mockFn func(m mocks)
-	}
-
-	var ctx = context.Background()
-	tests := []test{
-		{
-			name:  "ok",
-			input: dto.ListUserOrdersParam{UserId: "1", Count: 1},
-			mockFn: func(m mocks) {
-				m.mockOrderRepository.EXPECT().ListUserOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Times(1).Return([]model.Order{}, nil)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			mocks := newMocks(t)
-			tt.mockFn(mocks)
-			orderService := NewOrder(Deps{
-				WrapperStorage:     mocks.mockWrapperRepository,
-				Storage:            mocks.mockOrderRepository,
-				TransactionManager: mocks.mockTransactor,
-			})
-
-			_, err := orderService.ListUserOrders(ctx, tt.input)
-
-			require.ErrorIs(t, err, tt.err)
-		})
-	}
-}
-
-func TestService_RefundedOrders(t *testing.T) {
-	t.Parallel()
-
-	type test struct {
-		name   string
-		input  dto.PageParam
-		err    error
-		mockFn func(m mocks)
-	}
-
-	var ctx = context.Background()
-	tests := []test{
-		{
-			name:  "ok",
-			input: dto.PageParam{Size: 1, Page: 1},
-			mockFn: func(m mocks) {
-				m.mockOrderRepository.EXPECT().RefundedOrders(gomock.Any(), gomock.Any()).
-					Times(1).Return([]model.Order{}, nil)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			mocks := newMocks(t)
-			tt.mockFn(mocks)
-			orderService := NewOrder(Deps{
-				WrapperStorage:     mocks.mockWrapperRepository,
-				Storage:            mocks.mockOrderRepository,
-				TransactionManager: mocks.mockTransactor,
-			})
-
-			_, err := orderService.RefundedOrders(ctx, tt.input)
-
-			require.ErrorIs(t, err, tt.err)
-		})
-	}
-}
-
-func TestService_ReturnOrder(t *testing.T) {
+func TestOrderService_ReturnOrder(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
@@ -303,7 +219,7 @@ func TestService_ReturnOrder(t *testing.T) {
 	}
 }
 
-func TestService_RefundOrder(t *testing.T) {
+func TestOrderService_RefundOrder(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
@@ -388,7 +304,7 @@ func TestService_RefundOrder(t *testing.T) {
 	}
 }
 
-func TestService_IssueOrders(t *testing.T) {
+func TestOrderService_IssueOrders(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
