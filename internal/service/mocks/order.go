@@ -1,5 +1,6 @@
-//go:generate mockgen -source ./service.go -destination=./mocks/mock_order.go -package=mock_service
-package service
+// DONT EDIT: Auto generated
+
+package mock_service
 
 import (
 	"context"
@@ -7,6 +8,7 @@ import (
 	"homework/internal/model"
 )
 
+// orderService ...
 type orderService interface {
 	Deliver(ctx context.Context, order dto.DeliverOrderParam) error
 	ListUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error)

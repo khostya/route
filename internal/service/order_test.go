@@ -15,8 +15,8 @@ import (
 )
 
 type mocks struct {
-	mockOrderRepository   *mock_repository.MockorderRepo
-	mockWrapperRepository *mock_repository.MockwrapperRepo
+	mockOrderRepository   *mock_repository.MockorderStorage
+	mockWrapperRepository *mock_repository.MockwrapperStorage
 	mockTransactor        *mock_transactor.MockTransactor
 }
 
@@ -25,8 +25,8 @@ func newMocks(t *testing.T) mocks {
 
 	return mocks{
 		mockTransactor:        mock_transactor.NewMockTransactor(ctrl),
-		mockWrapperRepository: mock_repository.NewMockwrapperRepo(ctrl),
-		mockOrderRepository:   mock_repository.NewMockorderRepo(ctrl),
+		mockWrapperRepository: mock_repository.NewMockwrapperStorage(ctrl),
+		mockOrderRepository:   mock_repository.NewMockorderStorage(ctrl),
 	}
 }
 

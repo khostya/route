@@ -25,7 +25,15 @@ db-down:
 
 .PHONY: .generate-mockgen
 generate-mockgen:
+	find . -name 'mock_*.go' -delete
+	make generate-ifacemaker
 	go generate -x -run=mockgen ./...
+
+.PHONY: .ifacemaker
+generate-ifacemaker:
+	ifacemaker -f ./internal/service/order.go -s Order -i orderService -p mock_service -c "DONT EDIT: Auto generated" -o ./internal/service/mocks/order.go
+	ifacemaker -f ./internal/storage/wrapper.go -s WrapperStorage -i wrapperStorage -p mock_repository -c "DONT EDIT: Auto generated" -o ./internal/storage/mocks/wrapper.go
+	ifacemaker -f ./internal/storage/order.go -s OrderStorage -i orderStorage -p mock_repository -c "DONT EDIT: Auto generated" -o ./internal/storage/mocks/order.go
 
 # tests
 DEFAULT_TEST_PG_URL=postgres://postgres:password@localhost:5431/test?sslmode=disable

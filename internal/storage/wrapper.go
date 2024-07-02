@@ -1,3 +1,4 @@
+//go:generate mockgen -source ./mocks/wrapper.go -destination=./mocks/mock_wrapper.go -package=mock_repository
 package storage
 
 import (
