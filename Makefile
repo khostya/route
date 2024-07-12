@@ -37,6 +37,7 @@ generate-ifacemaker:
 
 # tests
 DEFAULT_TEST_PG_URL=postgres://postgres:password@localhost:5431/test?sslmode=disable
+DEFAULT_TEST_KAFKA_BROKER=localhost:9091
 
 .PHONY: .test-migration-status
 test-migration-status:
@@ -55,10 +56,18 @@ test-migration-up:
 
 .PHONY: .test-db-up
 test-db-up:
-	docker compose up -d postgres-test
+	docker compose -f docker-compose-test.yml up -d postgres-test
 
 .PHONY: .test-db-down
 test-db-down:
+	docker compose -f docker-compose-test.yml down
+
+.PHONY: .test-kafka-up
+test-kafka-up:
+	docker compose up -d zookeeper kafka1 kafka2 kafka3
+
+.PHONY: .test-kafka-down
+test-kafka-down:
 	docker compose down
 
 .PHONY: .unit-tests
@@ -67,4 +76,4 @@ unit-tests:
 
 .PHONY: .integration-tests
 integration-tests:
-	ENV=test TEST_DATABASE_URL=$(DEFAULT_TEST_PG_URL) go test ./... -tags=integration
+	ENV=test TEST_DATABASE_URL=$(DEFAULT_TEST_PG_URL) TEST_KAFKA_BROKER=$(DEFAULT_TEST_KAFKA_BROKER) go test ./... -tags=integration

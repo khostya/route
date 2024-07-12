@@ -1,10 +1,10 @@
 //go:build integration
 
-package tests
+package postgresql
 
 import (
 	"context"
-	"homework/tests/postgresql"
+	"homework/tests/postgresql/postgresql"
 	"os"
 	"testing"
 )
