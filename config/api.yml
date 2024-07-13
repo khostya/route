@@ -1,0 +1,4 @@
+grpc_port:  50051
+grpc_endpoint: localhost:50051
+http_port: 63342
+http_endpoint: localhost:63342

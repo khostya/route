@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "homework/pkg/grpc/order;order";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    version: "1.0"
+    title: "ozon route 256"
+  }
+  base_path: "/"
+};
+
+service Order {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    name: "Order"
+    description: "Order service example";
+    external_docs: {
+      url: "https://github.com/grpc-ecosystem/grpc-gateway?tab=readme-ov-file";
+      description: "Find out more about grpc-gateway";
+    }
+  };
+
+  rpc DeliverOrder(DeliverOrderRequest) returns (google.protobuf.Empty){
+    option(google.api.http) = {
+      post: "/v1/order/delver"
+      body: "*"
+    };
+
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: ['order']
+    };
+  };
+
+  rpc ReturnOrder(ReturnOrderRequest) returns (google.protobuf.Empty){
+    option(google.api.http) = {
+      patch: "/v1/order/return"
+      body: "*"
+    };
+
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: ['order']
+    };
+  };
+
+  rpc IssueOrders(IssueOrdersRequest) returns (google.protobuf.Empty){
+    option(google.api.http) = {
+      patch: "/v1/order/issue"
+      body: "*"
+    };
+
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: ['order']
+    };
+  };
+
+  rpc RefundOrder(RefundOrderRequest) returns (google.protobuf.Empty){
+    option(google.api.http) = {
+      patch: "/v1/order/refund"
+      body: "*"
+    };
+
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: ['order']
+    };
+  };
+
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse){
+    option(google.api.http) = {
+      get: "/v1/orders"
+    };
+
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: ['order']
+    };
+  };
+}
+
+enum OrderStatus {
+  delivered = 0;
+  issued    = 1;
+  refunded  = 2;
+}
+
+message DeliverOrderRequest{
+  string orderID = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+
+  string userID = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+
+  google.protobuf.Timestamp exp = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).timestamp.required = true,
+    (validate.rules).timestamp.gt_now = true
+  ];
+
+  optional string wrapperType = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+
+  float weightInKg = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).float.gt = 0
+  ];
+
+  float priceInRub = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).float.gte = 0
+  ];
+}
+
+message ReturnOrderRequest {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+}
+
+message IssueOrdersRequest {
+  repeated string ids = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).repeated.min_items = 1,
+    (validate.rules).repeated.items.string.min_len = 1
+  ];
+}
+
+message RefundOrderRequest {
+  string userID = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+
+  string orderID = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+}
+
+message ListOrdersRequest {
+  optional string userID = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.min_len = 1
+  ];
+
+  optional uint32 size = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).uint32.gt = 0
+  ];
+
+  optional uint32 page = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).uint32.gt = 0
+  ];
+
+  optional OrderStatus status = 4;
+}
+
+message ListOrdersResponse {
+  message Order {
+    string  id = 1;
+    string recipientID = 2;
+    OrderStatus status = 3;
+  }
+
+  repeated Order orders = 1;
+}

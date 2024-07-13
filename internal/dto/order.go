@@ -27,6 +27,13 @@ type (
 		Count  uint
 	}
 
+	ListOrdersParam struct {
+		UserId string
+		Size   uint
+		Page   uint
+		Status model.Status
+	}
+
 	PageParam struct {
 		Size uint
 		Page uint

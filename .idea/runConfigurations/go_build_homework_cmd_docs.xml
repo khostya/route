@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build homework/cmd/docs" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <module name="homework-1" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="API_CONFIG_PATH" value="./config/api.yml" />
+      <env name="ORDER_JSON_DOCS_PATH" value="./docs/order/v1/order.swagger.json" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="homework/cmd/docs" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cmd/docs/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

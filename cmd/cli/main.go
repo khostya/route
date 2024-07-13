@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	"homework/config"
 	"homework/internal/app"
 	"homework/internal/cli"
@@ -33,15 +32,14 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	pool, err := getPool(ctx)
+	pool, err := pool.PoolFromEnv(ctx, "DATABASE_URL")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	commands, err := getCommands(pool)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	commands := cli.NewCLI(cli.Deps{
+		Service: getService(pool),
+	})
 
 	var (
 		jobs        = getJobs(ctx, getLines())
@@ -86,7 +84,7 @@ func main() {
 	_, _ = fmt.Fprintln(os.Stdout, "done")
 }
 
-func getCommands(pool *pgxpool.Pool) (*cli.CLI, error) {
+func getService(pool *pgxpool.Pool) *service.Order {
 	transactionManager := transactor.NewTransactionManager(pool)
 
 	orderStorage := storage.NewOrderStorage(&transactionManager)
@@ -97,20 +95,5 @@ func getCommands(pool *pgxpool.Pool) (*cli.CLI, error) {
 		WrapperStorage:     wrapperStorage,
 		TransactionManager: &transactionManager,
 	})
-	return cli.NewCLI(cli.Deps{
-		Service: &orderService,
-	}), nil
-}
-
-func getPool(ctx context.Context) (*pgxpool.Pool, error) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		return nil, errors.New("Unable to parse DATABASE_URL")
-	}
-
-	pool, err := pool.Pool(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-	return pool, err
+	return &orderService
 }
