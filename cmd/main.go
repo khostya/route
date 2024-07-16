@@ -51,11 +51,11 @@ func main() {
 
 		controller.Add(output.BuildMessageChan[string](output.Kafka, kafkaMessages))
 		defer onCallConsumer.Close()
-	} else {
-		controller.Add(output.BuildMessageChan[string](output.CLI, app.GetOutput()))
 	}
+	controller.Add(output.BuildMessageChan[string](output.CLI, app.GetOutput()))
 
-	go run(ctx, cancel, app, controller.Subscribe())
+	output := output.FilterMessageChan[string](outputCFG.Filter, controller.Subscribe())
+	go run(ctx, cancel, app, output)
 
 	app.Wait()
 	controller.Close()
