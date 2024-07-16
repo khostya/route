@@ -9,15 +9,15 @@ import (
 	"testing"
 )
 
-func TestKafkaReceiver_Subscribe(t *testing.T) {
-	topik := "call"
+func TestKafkaConsumer_Subscribe(t *testing.T) {
+	topic := "call"
 	consumer := mock_kafka.NewConsumer(t, nil)
-	consumer.SetTopicMetadata(map[string][]int32{topik: {1}})
+	consumer.SetTopicMetadata(map[string][]int32{topic: {1}})
 	receiver := NewKafkaReceiver(&kafka.Consumer{
 		SingleConsumer: consumer,
 	})
 
-	consumer.ExpectConsumePartition(topik, 1, -1).YieldMessage(&sarama.ConsumerMessage{})
+	consumer.ExpectConsumePartition(topic, 1, -1).YieldMessage(&sarama.ConsumerMessage{})
 	ctx, cancel := context.WithCancel(context.Background())
 
 	err := receiver.Subscribe("call", func(message *sarama.ConsumerMessage) {

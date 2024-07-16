@@ -12,7 +12,7 @@ import (
 	"homework/internal/service"
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
-	output2 "homework/pkg/output"
+	"homework/pkg/output"
 	pool "homework/pkg/postgres"
 	"log"
 	"os"
@@ -26,67 +26,50 @@ const (
 )
 
 func main() {
-	kafkaCFG, err := config.NewKafkaConfig()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+	kafkaCFG := config.NewMustKafkaConfig()
+	outputCFG := config.NewMustOutputConfig()
+
+	controller := output.NewController[output.Message[string]]()
+
+	jobs := getJobs(ctx, getLines())
+	commands, closePG := getCommands(ctx)
+
+	onCallProducer := getOnCallKafkaSender(ctx, kafkaCFG)
+	defer onCallProducer.Close()
+
+	app := app.NewApp(commands, jobs, onCallProducer)
+	err := app.Start(ctx, numWorkers)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	if outputCFG.Filter == output.Kafka {
+		kafkaMessages, handler := oncall.NewTopicHandler()
+		onCallConsumer := getOnCallKafkaReceiver(kafkaCFG, handler)
 
+		controller.Add(output.BuildMessageChan[string](output.Kafka, kafkaMessages))
+		defer onCallConsumer.Close()
+	} else {
+		controller.Add(output.BuildMessageChan[string](output.CLI, app.GetOutput()))
+	}
+
+	go run(ctx, cancel, app, controller.Subscribe())
+
+	app.Wait()
+	controller.Close()
+	commands.Close()
+	closePG()
+	_, _ = fmt.Fprintln(os.Stdout, "done")
+}
+
+func getCommands(ctx context.Context) (*cli.CLI, func()) {
 	pool, err := getPool(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	commands, err := getCommands(pool)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	var (
-		jobs        = getJobs(ctx, getLines())
-		cliMessages = make(chan error, numJobs)
-	)
-
-	onCallProducer, err := getOnCallKafkaSender(ctx, kafkaCFG)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer onCallProducer.Close()
-
-	kafkaMessages, handler := oncall.NewTopicHandler()
-	onCallConsumer, err := getOnCallKafkaReceiver(kafkaCFG, handler)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer onCallConsumer.Close()
-
-	app := app.NewApp(commands, jobs, onCallProducer)
-	err = app.Start(ctx, numWorkers, cliMessages)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	output := output2.NewController[output2.Message[string]]()
-	output.Add(output2.BuildMessageChan[string](output2.CLI, app.GetOutput()))
-	output.Add(output2.BuildMessageChan[string](output2.CLI, commands.GetOutput()))
-	output.Add(output2.BuildMessageChan[string](output2.Kafka, kafkaMessages))
-
-	cfg, err := config.NewOutputConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go run(ctx, cancel, app, output2.FilterMessageChan[string](cfg.Filter, output.Subscribe()))
-
-	app.Wait()
-	output.Close()
-	commands.Close()
-	pool.Close()
-	_, _ = fmt.Fprintln(os.Stdout, "done")
-}
-
-func getCommands(pool *pgxpool.Pool) (*cli.CLI, error) {
 	transactionManager := transactor.NewTransactionManager(pool)
 
 	orderStorage := storage.NewOrderStorage(&transactionManager)
@@ -99,7 +82,7 @@ func getCommands(pool *pgxpool.Pool) (*cli.CLI, error) {
 	})
 	return cli.NewCLI(cli.Deps{
 		Service: &orderService,
-	}), nil
+	}), pool.Close
 }
 
 func getPool(ctx context.Context) (*pgxpool.Pool, error) {

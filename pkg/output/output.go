@@ -30,7 +30,7 @@ func (c *Controller[T]) push(message T) {
 	}
 }
 
-func (c *Controller[T]) Subscribe() chan T {
+func (c *Controller[T]) Subscribe() <-chan T {
 	out := make(chan T, 10)
 	c.subscribers = append(c.subscribers, out)
 	return out

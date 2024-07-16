@@ -81,7 +81,7 @@ func (c CLI) GetChangeNumberWorkers() <-chan int {
 	return c.changeNumberWorkersChan.Subscribe()
 }
 
-func (c CLI) GetOutput() chan string {
+func (c CLI) GetOutput() <-chan string {
 	return c.out.Subscribe()
 }
 

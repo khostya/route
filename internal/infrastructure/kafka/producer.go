@@ -9,7 +9,6 @@ import (
 )
 
 type Producer struct {
-	brokers       Brokers
 	syncProducer  sarama.SyncProducer
 	asyncProducer sarama.AsyncProducer
 }
@@ -90,7 +89,6 @@ func NewProducer(ctx context.Context, brokers Brokers) (*Producer, error) {
 	}
 
 	producer := &Producer{
-		brokers:       brokers,
 		syncProducer:  syncProducer,
 		asyncProducer: asyncProducer,
 	}
