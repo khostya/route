@@ -21,3 +21,11 @@ func NewKafkaConfig() (KafkaConfig, error) {
 	err := cleanenv.ReadConfig(path, &cfg)
 	return cfg, err
 }
+
+func NewMustKafkaConfig() KafkaConfig {
+	config, err := NewKafkaConfig()
+	if err != nil {
+		println(err)
+	}
+	return config
+}

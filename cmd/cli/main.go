@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"homework/config"
@@ -11,7 +12,7 @@ import (
 	"homework/internal/service"
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
-	output2 "homework/pkg/output"
+	"homework/pkg/output"
 	pool "homework/pkg/postgres"
 	"log"
 	"os"
@@ -25,66 +26,49 @@ const (
 )
 
 func main() {
-	kafkaCFG, err := config.NewKafkaConfig()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	pool, err := pool.PoolFromEnv(ctx, "DATABASE_URL")
-	if err != nil {
-		log.Fatalln(err)
-	}
+	kafkaCFG := config.NewMustKafkaConfig()
+	outputCFG := config.NewMustOutputConfig()
 
-	commands := cli.NewCLI(cli.Deps{
-		Service: getService(pool),
-	})
+	controller := output.NewController[output.Message[string]]()
+	jobs := getJobs(ctx, getLines())
+	commands, closePG := getCommands(ctx)
 
-	var (
-		jobs        = getJobs(ctx, getLines())
-		cliMessages = make(chan error, numJobs)
-	)
-
-	onCallProducer, err := getOnCallKafkaSender(ctx, kafkaCFG)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	onCallProducer := getOnCallKafkaSender(ctx, kafkaCFG)
 	defer onCallProducer.Close()
 
-	kafkaMessages, handler := oncall.NewTopicHandler()
-	onCallConsumer, err := getOnCallKafkaReceiver(kafkaCFG, handler)
+	app := app.NewApp(commands, jobs, onCallProducer)
+	err := app.Start(ctx, numWorkers)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer onCallConsumer.Close()
 
-	app := app.NewApp(commands, jobs, onCallProducer)
-	err = app.Start(ctx, numWorkers, cliMessages)
-	if err != nil {
-		log.Fatal(err)
+	if outputCFG.Filter == output.Kafka {
+		kafkaMessages, handler := oncall.NewTopicHandler()
+		onCallConsumer := getOnCallKafkaReceiver(kafkaCFG, handler)
+
+		controller.Add(output.BuildMessageChan[string](output.Kafka, kafkaMessages))
+		defer onCallConsumer.Close()
+	} else {
+		controller.Add(output.BuildMessageChan[string](output.CLI, app.GetOutput()))
 	}
 
-	output := output2.NewController[output2.Message[string]]()
-	output.Add(output2.BuildMessageChan[string](output2.CLI, app.GetOutput()))
-	output.Add(output2.BuildMessageChan[string](output2.CLI, commands.GetOutput()))
-	output.Add(output2.BuildMessageChan[string](output2.Kafka, kafkaMessages))
-
-	cfg, err := config.NewOutputConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go run(ctx, cancel, app, output2.FilterMessageChan[string](cfg.Filter, output.Subscribe()))
+	go run(ctx, cancel, app, controller.Subscribe())
 
 	app.Wait()
-	output.Close()
+	controller.Close()
 	commands.Close()
-	pool.Close()
+	closePG()
 	_, _ = fmt.Fprintln(os.Stdout, "done")
 }
 
-func getService(pool *pgxpool.Pool) *service.Order {
+func getCommands(ctx context.Context) (*cli.CLI, func()) {
+	pool, err := getPool(ctx)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	transactionManager := transactor.NewTransactionManager(pool)
 
 	orderStorage := storage.NewOrderStorage(&transactionManager)
@@ -95,5 +79,20 @@ func getService(pool *pgxpool.Pool) *service.Order {
 		WrapperStorage:     wrapperStorage,
 		TransactionManager: &transactionManager,
 	})
-	return &orderService
+	return cli.NewCLI(cli.Deps{
+		Service: &orderService,
+	}), pool.Close
+}
+
+func getPool(ctx context.Context) (*pgxpool.Pool, error) {
+	url := os.Getenv("DATABASE_URL")
+	if url == "" {
+		return nil, errors.New("unable to parse DATABASE_URL")
+	}
+
+	pool, err := pool.Pool(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	return pool, err
 }

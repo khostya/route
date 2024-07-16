@@ -9,13 +9,13 @@ import (
 )
 
 type Kafka struct {
-	OnCallSender   *oncall.KafkaSender
-	OnCallReceiver *oncall.KafkaReceiver
+	OnCallSender   *oncall.KafkaProducer
+	OnCallReceiver *oncall.KafkaConsumer
 	Topic          kafka.Topic
 	broker         string
 }
 
-func NewOnCallFromEnv(ctx context.Context, topik kafka.Topic) *Kafka {
+func NewOnCallFromEnv(ctx context.Context, topic kafka.Topic) *Kafka {
 	broker := os.Getenv("TEST_KAFKA_BROKER")
 	if broker == "" {
 		panic("TEST_KAFKA_BROKER isn`t set")
@@ -29,13 +29,13 @@ func NewOnCallFromEnv(ctx context.Context, topik kafka.Topic) *Kafka {
 	if err != nil {
 		panic(err)
 	}
-	onCallSender := oncall.NewKafkaSender(producer, topik)
+	onCallSender := oncall.NewKafkaProducer(producer, topic)
 	onCallReceiver := oncall.NewKafkaReceiver(consumer)
 
 	return &Kafka{
 		onCallSender,
 		onCallReceiver,
-		topik,
+		topic,
 		broker,
 	}
 }
