@@ -28,8 +28,8 @@ const (
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	kafkaCFG := config.NewMustKafkaConfig()
-	outputCFG := config.NewMustOutputConfig()
+	kafkaCFG := config.MustNewKafkaConfig()
+	outputCFG := config.MustNewOutputConfig()
 
 	controller := output.NewController[output.Message[string]]()
 

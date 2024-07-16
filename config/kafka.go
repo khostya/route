@@ -22,10 +22,10 @@ func NewKafkaConfig() (KafkaConfig, error) {
 	return cfg, err
 }
 
-func NewMustKafkaConfig() KafkaConfig {
+func MustNewKafkaConfig() KafkaConfig {
 	config, err := NewKafkaConfig()
 	if err != nil {
-		println(err)
+		panic(err)
 	}
 	return config
 }
