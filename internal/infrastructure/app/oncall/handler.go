@@ -9,7 +9,7 @@ import (
 func NewTopicHandler() (<-chan string, HandleFunc) {
 	out := make(chan string)
 	return out, func(message *sarama.ConsumerMessage) {
-		var callMessage dto.CallMessage
+		var callMessage dto.OnCallMessage
 		err := callMessage.Unmarshal(message.Value)
 		if err != nil {
 			out <- fmt.Sprintf("Consumer error: %v \n", err)

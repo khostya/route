@@ -54,7 +54,7 @@ func (s *OnCallTestSuite) TestSend() {
 }
 
 func (s *OnCallTestSuite) TestSendMessages() {
-	onCallMessages := []dto.CallMessage{NewOnCallMessage(), NewOnCallMessage()}
+	onCallMessages := []dto.OnCallMessage{NewOnCallMessage(), NewOnCallMessage()}
 	err := s.kafka.OnCallSender.SendMessages(onCallMessages)
 	require.NoError(s.T(), err)
 }
@@ -66,7 +66,7 @@ func (s *OnCallTestSuite) TestGetMessages() {
 	err := s.kafka.OnCallReceiver.Subscribe(s.kafka.Topic, func(message *sarama.ConsumerMessage) {
 		received = true
 
-		var m dto.CallMessage
+		var m dto.OnCallMessage
 		err := m.Unmarshal(message.Value)
 		require.NoError(s.T(), err)
 		require.EqualExportedValues(s.T(), onCallMessage, m)

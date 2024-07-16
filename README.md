@@ -1,3 +1,5 @@
+сваггер будет на http://localhost:8888/swagger/index.html 
+
 ## Примеры команд
 ```
 help

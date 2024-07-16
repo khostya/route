@@ -83,7 +83,7 @@ func (o *OrderService) ListOrders(ctx context.Context, req *order.ListOrdersRequ
 		UserId: req.GetUserID(),
 		Size:   uint(req.GetSize()),
 		Page:   uint(req.GetPage()),
-		Status: model.Status(order.OrderStatus_name[int32(req.GetStatus())]),
+		Status: model.Status(req.GetStatus().String()),
 	})
 
 	if err != nil {
@@ -114,8 +114,8 @@ func (o *OrderService) DeliverOrder(ctx context.Context, req *order.DeliverOrder
 	}
 
 	priceInRub := wrapper.PriceInRub(decimal.NewFromFloat(float64(req.GetPriceInRub())))
-	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(req.GetWrapperType()))
-	if req.WrapperType != nil && err != nil {
+	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(req.WrapperType.String()))
+	if req.WrapperType != order.WrapperType_none && err != nil {
 		return &emptypb.Empty{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 

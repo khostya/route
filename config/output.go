@@ -29,10 +29,10 @@ func NewOutputConfig() (OutputConfig, error) {
 	return cfg, err
 }
 
-func NewMustOutputConfig() OutputConfig {
+func MustNewOutputConfig() OutputConfig {
 	config, err := NewOutputConfig()
 	if err != nil {
-		println(err)
+		panic(err)
 	}
 	return config
 }

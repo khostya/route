@@ -18,7 +18,7 @@ func NewKafkaProducer(producer *kafka.Producer, topic kafka.Topic) *KafkaProduce
 	}
 }
 
-func (p *KafkaProducer) SendAsyncMessage(message dto.CallMessage) error {
+func (p *KafkaProducer) SendAsyncMessage(message dto.OnCallMessage) error {
 	kafkaMsg, err := p.buildMessage(message)
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (p *KafkaProducer) SendAsyncMessage(message dto.CallMessage) error {
 	return nil
 }
 
-func (p *KafkaProducer) SendMessage(message *dto.CallMessage) error {
+func (p *KafkaProducer) SendMessage(message *dto.OnCallMessage) error {
 	kafkaMsg, err := p.buildMessage(*message)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (p *KafkaProducer) SendMessage(message *dto.CallMessage) error {
 	return err
 }
 
-func (p *KafkaProducer) SendMessages(messages []dto.CallMessage) error {
+func (p *KafkaProducer) SendMessages(messages []dto.OnCallMessage) error {
 	var kafkaMsg []*sarama.ProducerMessage
 
 	for _, m := range messages {
@@ -53,7 +53,7 @@ func (p *KafkaProducer) SendMessages(messages []dto.CallMessage) error {
 	return p.producer.SendSyncMessages(kafkaMsg)
 }
 
-func (p *KafkaProducer) buildMessage(message dto.CallMessage) (*sarama.ProducerMessage, error) {
+func (p *KafkaProducer) buildMessage(message dto.OnCallMessage) (*sarama.ProducerMessage, error) {
 	msg, err := message.Marshal()
 	if err != nil {
 		return nil, err

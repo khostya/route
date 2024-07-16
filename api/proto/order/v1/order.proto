@@ -16,7 +16,6 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     version: "1.0"
     title: "ozon route 256"
   }
-  base_path: "/"
 };
 
 service Order {
@@ -107,9 +106,8 @@ message DeliverOrderRequest{
     (validate.rules).timestamp.gt_now = true
   ];
 
-  optional string wrapperType = 4 [
-    (google.api.field_behavior) = REQUIRED,
-    (validate.rules).string.min_len = 1
+  WrapperType wrapperType = 4 [
+    (google.api.field_behavior) = REQUIRED
   ];
 
   float weightInKg = 5 [
@@ -121,6 +119,13 @@ message DeliverOrderRequest{
     (google.api.field_behavior) = REQUIRED,
     (validate.rules).float.gte = 0
   ];
+}
+
+enum WrapperType {
+  none = 0;
+  box = 1;
+  package = 2;
+  stretch = 3;
 }
 
 message ReturnOrderRequest {

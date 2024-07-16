@@ -14,7 +14,6 @@
       }
     }
   ],
-  "basePath": "/",
   "consumes": [
     "application/json"
   ],
@@ -240,7 +239,7 @@
           "format": "date-time"
         },
         "wrapperType": {
-          "type": "string"
+          "$ref": "#/definitions/orderWrapperType"
         },
         "weightInKg": {
           "type": "number",
@@ -320,6 +319,16 @@
       "required": [
         "id"
       ]
+    },
+    "orderWrapperType": {
+      "type": "string",
+      "enum": [
+        "none",
+        "box",
+        "package",
+        "stretch"
+      ],
+      "default": "none"
     },
     "protobufAny": {
       "type": "object",

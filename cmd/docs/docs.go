@@ -32,7 +32,7 @@ func init() {
 	m["host"] = api.HttpENDPOINT
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(m)
+	err = json.NewEncoder(&buf).Encode(m)
 	if err != nil {
 		panic(err)
 	}

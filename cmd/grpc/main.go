@@ -3,40 +3,36 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"homework/internal/service"
-	"homework/internal/storage"
-	"homework/internal/storage/transactor"
-	pool "homework/pkg/postgres"
-	"log"
+	"homework/cmd"
+	"homework/config"
+	"homework/internal/infrastructure/app/oncall"
+	"homework/pkg/output"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
-	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	controller := output.NewController[output.Message[string]]()
+	outputCFG := config.MustNewOutputConfig()
 
-	pool, err := pool.PoolFromEnv(ctx, "DATABASE_URL")
-	if err != nil {
-		log.Fatalln(err)
-	}
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	startGrpcServer(ctx, getService(pool)).Wait()
-	pool.Close()
+	command, closeDB := cmd.GetOrderService(ctx)
+	producer := cmd.GetOnCallKafkaSender(ctx)
+
+	grpcWG := startGrpcServer(ctx, cancel, command, producer)
+
+	out, handler := oncall.NewTopicHandler()
+	controller.Add(output.BuildMessageChan[string](output.Kafka, out))
+
+	consumer := cmd.GetOnCallKafkaReceiver(handler)
+	defer consumer.Close()
+
+	filtered := output.FilterMessageChan(outputCFG.Filter, controller.Subscribe())
+	go run(ctx, cancel, filtered)
+
+	grpcWG.Wait()
+	closeDB()
 	_, _ = fmt.Fprintln(os.Stdout, "done")
-}
-
-func getService(pool *pgxpool.Pool) *service.Order {
-	transactionManager := transactor.NewTransactionManager(pool)
-
-	orderStorage := storage.NewOrderStorage(&transactionManager)
-	wrapperStorage := storage.NewWrapperStorage(&transactionManager)
-
-	var orderService = service.NewOrder(service.Deps{
-		Storage:            orderStorage,
-		WrapperStorage:     wrapperStorage,
-		TransactionManager: &transactionManager,
-	})
-	return &orderService
 }

@@ -120,6 +120,8 @@ func (m *DeliverOrderRequest) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for WrapperType
+
 	if m.GetWeightInKg() <= 0 {
 		err := DeliverOrderRequestValidationError{
 			field:  "WeightInKg",
@@ -140,21 +142,6 @@ func (m *DeliverOrderRequest) validate(all bool) error {
 			return err
 		}
 		errors = append(errors, err)
-	}
-
-	if m.WrapperType != nil {
-
-		if utf8.RuneCountInString(m.GetWrapperType()) < 1 {
-			err := DeliverOrderRequestValidationError{
-				field:  "WrapperType",
-				reason: "value length must be at least 1 runes",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
 	}
 
 	if len(errors) > 0 {

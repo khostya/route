@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"homework/config"
 	"homework/internal/api"
+	"homework/internal/api/middleware"
+	"homework/internal/infrastructure/app/oncall"
 	"homework/internal/service"
 	"homework/pkg/api/order/v1"
 	gw "homework/pkg/api/order/v1"
@@ -18,12 +20,7 @@ import (
 	"sync"
 )
 
-type GRPC struct {
-}
-
-func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderService *service.Order) *sync.WaitGroup {
-	var wg sync.WaitGroup
-
+func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderService *service.Order, producer *oncall.KafkaProducer) *sync.WaitGroup {
 	cfg, err := config.NewApiConfig()
 	if err != nil {
 		log.Fatalln(err)
@@ -47,30 +44,31 @@ func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderSe
 		Handler: cors.AllowAll().Handler(mux),
 	}
 
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		err := gwServer.ListenAndServe()
 		if err != nil {
 			cancelFunc()
 		}
 	}()
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(middleware.OnCall(producer)))
 	order.RegisterOrderServer(grpcServer, api.NewOrderService(orderService))
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		err := grpcServer.Serve(lis)
 		if err != nil {
 			cancelFunc()
 		}
 	}()
 
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
 		<-ctx.Done()
-		grpcServer.Stop()
-		gwServer.Close()
+		grpcServer.GracefulStop()
+		wg.Done()
+
+		gwServer.Shutdown(ctx)
+		wg.Done()
 	}()
 
 	return &wg

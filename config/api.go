@@ -10,6 +10,7 @@ type ApiConfig struct {
 	GrpcENDPOINT string `yaml:"grpc_endpoint"`
 	HttpPort     uint   `yaml:"http_port"`
 	HttpENDPOINT string `yaml:"http_endpoint"`
+	SwaggerPort  uint   `yaml:"swagger_port"`
 }
 
 func NewApiConfig() (ApiConfig, error) {
@@ -20,4 +21,12 @@ func NewApiConfig() (ApiConfig, error) {
 	var cfg ApiConfig
 	err := cleanenv.ReadConfig(path, &cfg)
 	return cfg, err
+}
+
+func MustNewApiConfig() ApiConfig {
+	cfg, err := NewApiConfig()
+	if err != nil {
+		panic(err)
+	}
+	return cfg
 }
