@@ -32,7 +32,6 @@ func main() {
 
 	onCallProducer := cmd.GetOnCallKafkaSender(ctx)
 	defer onCallProducer.Close()
-
 	app := app.NewApp(commands, jobs, onCallProducer)
 	err := app.Start(ctx, numWorkers)
 	if err != nil {

@@ -20,14 +20,14 @@ func main() {
 
 	command, closeDB := cmd.GetOrderService(ctx)
 	producer := cmd.GetOnCallKafkaSender(ctx)
-
 	grpcWG := startGrpcServer(ctx, cancel, command, producer)
 
-	out, handler := oncall.NewTopicHandler()
-	controller.Add(output.BuildMessageChan[string](output.Kafka, out))
-
-	consumer := cmd.GetOnCallKafkaReceiver(handler)
-	defer consumer.Close()
+	if outputCFG.Filter == output.Kafka {
+		kafkaMessages, handler := oncall.NewTopicHandler()
+		onCallConsumer := cmd.GetOnCallKafkaReceiver(handler)
+		controller.Add(output.BuildMessageChan[string](output.Kafka, kafkaMessages))
+		defer onCallConsumer.Close()
+	}
 
 	filtered := output.FilterMessageChan(outputCFG.Filter, controller.Subscribe())
 	go run(ctx, cancel, filtered)
