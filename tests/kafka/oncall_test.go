@@ -47,19 +47,7 @@ func (s *OnCallTestSuite) TestAsyncSend() {
 	require.NoError(s.T(), err)
 }
 
-func (s *OnCallTestSuite) TestSend() {
-	onCallMessage := NewOnCallMessage()
-	err := s.kafka.OnCallSender.SendMessage(&onCallMessage)
-	require.NoError(s.T(), err)
-}
-
-func (s *OnCallTestSuite) TestSendMessages() {
-	onCallMessages := []dto.OnCallMessage{NewOnCallMessage(), NewOnCallMessage()}
-	err := s.kafka.OnCallSender.SendMessages(onCallMessages)
-	require.NoError(s.T(), err)
-}
-
-func (s *OnCallTestSuite) TestGetMessages() {
+func (s *OnCallTestSuite) TestAsyncGetMessage() {
 	onCallMessage := NewOnCallMessage()
 
 	received := false
@@ -73,7 +61,7 @@ func (s *OnCallTestSuite) TestGetMessages() {
 	})
 	require.NoError(s.T(), err)
 
-	err = s.kafka.OnCallSender.SendMessage(&onCallMessage)
+	err = s.kafka.OnCallSender.SendAsyncMessage(onCallMessage)
 	require.NoError(s.T(), err)
 
 	time.Sleep(time.Second * 3)

@@ -12,11 +12,12 @@ import (
 
 func Pool(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.Connect(ctx, url)
-	pool.Config().ConnConfig.LogLevel = pgx.LogLevelDebug
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to create connection pool")
 	}
-	return pool, err
+
+	pool.Config().ConnConfig.LogLevel = pgx.LogLevelDebug
+	return pool, nil
 }
 
 func PoolFromEnv(ctx context.Context, key string) (*pgxpool.Pool, error) {

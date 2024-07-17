@@ -35,7 +35,7 @@ generate-ifacemaker:
 	ifacemaker -f ./internal/storage/order.go -s OrderStorage -i orderStorage -p mock_repository -c "DONT EDIT: Auto generated" -o ./internal/storage/mocks/order.go
 
 # tests
-DEFAULT_TEST_PG_URL=postgres://postgres:password@localhost:5431/test?sslmode=disable
+DEFAULT_TEST_PG_URL=postgres://postgres:password@localhost:5431/postgres?sslmode=disable
 DEFAULT_TEST_KAFKA_BROKER=localhost:9091
 
 .PHONY: .test-migration-status
