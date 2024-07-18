@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -9,6 +10,8 @@ import (
 	"homework/internal/dto"
 	"homework/internal/model"
 	"homework/internal/model/wrapper"
+	"homework/internal/service"
+	"homework/internal/storage"
 	"homework/pkg/api/order/v1"
 )
 
@@ -37,8 +40,9 @@ func (o *OrderService) ReturnOrder(ctx context.Context, req *order.ReturnOrderRe
 	}
 
 	err := o.service.ReturnOrder(ctx, req.GetId())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+
+	if err := toGRPCError(err); err != nil {
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
@@ -50,10 +54,9 @@ func (o *OrderService) IssueOrders(ctx context.Context, req *order.IssueOrdersRe
 	}
 
 	err := o.service.IssueOrders(ctx, req.GetIds())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if err := toGRPCError(err); err != nil {
+		return nil, err
 	}
-
 	return &emptypb.Empty{}, nil
 }
 
@@ -67,8 +70,8 @@ func (o *OrderService) RefundOrder(ctx context.Context, req *order.RefundOrderRe
 		RecipientID: req.GetUserID(),
 	})
 
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if err := toGRPCError(err); err != nil {
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
@@ -83,24 +86,19 @@ func (o *OrderService) ListOrders(ctx context.Context, req *order.ListOrdersRequ
 		UserId: req.GetUserID(),
 		Size:   uint(req.GetSize()),
 		Page:   uint(req.GetPage()),
-		Status: model.Status(req.GetStatus().String()),
+		Status: grpcOrderStatusToDomain(req.GetStatus()),
 	})
 
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if err := toGRPCError(err); err != nil {
+		return nil, err
 	}
 
 	var resp order.ListOrdersResponse
 	for _, o := range orders {
-		statusValue, ok := order.OrderStatus_value[string(o.Status)]
-		if !ok {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
 		respOrder := &order.ListOrdersResponse_Order{
 			RecipientID: o.RecipientID,
 			Id:          o.ID,
-			Status:      order.OrderStatus(statusValue),
+			Status:      domainOrderStatusToGRPC(o.Status),
 		}
 		resp.Orders = append(resp.Orders, respOrder)
 	}
@@ -114,8 +112,8 @@ func (o *OrderService) DeliverOrder(ctx context.Context, req *order.DeliverOrder
 	}
 
 	priceInRub := wrapper.PriceInRub(decimal.NewFromFloat(float64(req.GetPriceInRub())))
-	wrapper, err := wrapper.NewDefaultWrapper(wrapper.WrapperType(req.WrapperType.String()))
-	if req.WrapperType != order.WrapperType_none && err != nil {
+	wrapper, err := wrapper.NewDefaultWrapper(grpcWrapperTypeToDomain(req.GetWrapperType()))
+	if req.WrapperType != order.WrapperType_WRAPPER_TYPE_NONE && err != nil {
 		return &emptypb.Empty{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -127,9 +125,55 @@ func (o *OrderService) DeliverOrder(ctx context.Context, req *order.DeliverOrder
 		Wrapper:        wrapper,
 		PriceInRub:     priceInRub,
 	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+
+	if err := toGRPCError(err); err != nil {
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func toGRPCError(err error) error {
+	var orderServiceError service.OrderServiceError
+	isOrderServiceError := errors.As(err, &orderServiceError)
+	if isOrderServiceError {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	switch {
+	case errors.Is(err, storage.ErrNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, storage.ErrDuplicateOrderID):
+		return status.Error(codes.AlreadyExists, err.Error())
+	default:
+		if err == nil {
+			return nil
+		}
+		return status.Error(codes.Internal, err.Error())
+	}
+}
+
+func grpcOrderStatusToDomain(orderStatus order.OrderStatus) model.Status {
+	return map[order.OrderStatus]model.Status{
+		order.OrderStatus_ORDER_STATUS_DELIVERED: model.StatusDelivered,
+		order.OrderStatus_ORDER_STATUS_ISSUED:    model.StatusIssued,
+		order.OrderStatus_ORDER_STATUS_REFUNDED:  model.StatusRefunded,
+	}[orderStatus]
+}
+
+func domainOrderStatusToGRPC(orderStatus model.Status) order.OrderStatus {
+	return map[model.Status]order.OrderStatus{
+		model.StatusDelivered: order.OrderStatus_ORDER_STATUS_DELIVERED,
+		model.StatusIssued:    order.OrderStatus_ORDER_STATUS_ISSUED,
+		model.StatusRefunded:  order.OrderStatus_ORDER_STATUS_REFUNDED,
+	}[orderStatus]
+}
+
+func grpcWrapperTypeToDomain(wrapperType order.WrapperType) wrapper.WrapperType {
+	return map[order.WrapperType]wrapper.WrapperType{
+		order.WrapperType_WRAPPER_TYPE_NONE:    wrapper.NoneWrapper,
+		order.WrapperType_WRAPPER_TYPE_BOX:     wrapper.BoxWrapper,
+		order.WrapperType_WRAPPER_TYPE_PACKAGE: wrapper.PackageWrapper,
+		order.WrapperType_WRAPPER_TYPE_STRETCH: wrapper.StretchWrapper,
+	}[wrapperType]
 }

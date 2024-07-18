@@ -197,11 +197,11 @@
             "required": false,
             "type": "string",
             "enum": [
-              "delivered",
-              "issued",
-              "refunded"
+              "ORDER_STATUS_DELIVERED",
+              "ORDER_STATUS_ISSUED",
+              "ORDER_STATUS_REFUNDED"
             ],
-            "default": "delivered"
+            "default": "ORDER_STATUS_DELIVERED"
           }
         ],
         "tags": [
@@ -288,11 +288,11 @@
     "orderOrderStatus": {
       "type": "string",
       "enum": [
-        "delivered",
-        "issued",
-        "refunded"
+        "ORDER_STATUS_DELIVERED",
+        "ORDER_STATUS_ISSUED",
+        "ORDER_STATUS_REFUNDED"
       ],
-      "default": "delivered"
+      "default": "ORDER_STATUS_DELIVERED"
     },
     "orderRefundOrderRequest": {
       "type": "object",
@@ -323,12 +323,12 @@
     "orderWrapperType": {
       "type": "string",
       "enum": [
-        "none",
-        "box",
-        "package",
-        "stretch"
+        "WRAPPER_TYPE_NONE",
+        "WRAPPER_TYPE_BOX",
+        "WRAPPER_TYPE_PACKAGE",
+        "WRAPPER_TYPE_STRETCH"
       ],
-      "default": "none"
+      "default": "WRAPPER_TYPE_NONE"
     },
     "protobufAny": {
       "type": "object",

@@ -10,7 +10,7 @@ import (
 func NewOnCallMessage() dto.OnCallMessage {
 	return dto.OnCallMessage{
 		CalledAt: time.Now(),
-		Args:     []string{"--user=1", "--id=1"},
+		Args:     "--user=1 --id=1",
 		Method:   "call",
 	}
 }

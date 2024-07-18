@@ -75,7 +75,7 @@ unit-tests:
 
 .PHONY: .integration-tests
 integration-tests:
-	ENV=test TEST_DATABASE_URL=$(DEFAULT_TEST_PG_URL) TEST_KAFKA_BROKER=$(DEFAULT_TEST_KAFKA_BROKER) go test ./... -tags=integration
+	ENV=test TEST_DATABASE_URL=$(DEFAULT_TEST_PG_URL) TEST_KAFKA_BROKER=$(DEFAULT_TEST_KAFKA_BROKER) go test ./tests/... -tags=integration
 
 # proto
 # Используем bin в текущей директории для установки плагинов protoc

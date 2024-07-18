@@ -17,7 +17,16 @@ type (
 	}
 )
 
-var wrappers Wrappers = make(map[WrapperType]*Wrapper)
+var (
+	wrappers Wrappers = make(map[WrapperType]*Wrapper)
+)
+
+const (
+	BoxWrapper     WrapperType = "box"
+	NoneWrapper    WrapperType = ""
+	StretchWrapper WrapperType = "stretch"
+	PackageWrapper WrapperType = "package"
+)
 
 func init() {
 	wrappersCFG, err := config.NewWrappersConfig()

@@ -84,9 +84,9 @@ service Order {
 }
 
 enum OrderStatus {
-  delivered = 0;
-  issued    = 1;
-  refunded  = 2;
+  ORDER_STATUS_DELIVERED = 0;
+  ORDER_STATUS_ISSUED = 1;
+  ORDER_STATUS_REFUNDED = 2;
 }
 
 message DeliverOrderRequest{
@@ -122,10 +122,10 @@ message DeliverOrderRequest{
 }
 
 enum WrapperType {
-  none = 0;
-  box = 1;
-  package = 2;
-  stretch = 3;
+  WRAPPER_TYPE_NONE = 0;
+  WRAPPER_TYPE_BOX = 1;
+  WRAPPER_TYPE_PACKAGE = 2;
+  WRAPPER_TYPE_STRETCH = 3;
 }
 
 message ReturnOrderRequest {
