@@ -1,21 +1,22 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	app2 "homework/internal/app"
+	"homework/config"
+	"homework/internal/app"
 	"homework/internal/cli"
+	"homework/internal/infrastructure/app/oncall"
 	"homework/internal/service"
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
+	"homework/pkg/output"
 	pool "homework/pkg/postgres"
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
@@ -27,96 +28,48 @@ const (
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	out := bufio.NewWriter(os.Stdout)
-	defer out.Flush()
+	kafkaCFG := config.MustNewKafkaConfig()
+	outputCFG := config.MustNewOutputConfig()
 
+	controller := output.NewController[output.Message[string]]()
+
+	jobs := getJobs(ctx, getLines())
+	commands, closePG := getCommands(ctx)
+
+	onCallProducer := getOnCallKafkaSender(ctx, kafkaCFG)
+	defer onCallProducer.Close()
+
+	app := app.NewApp(commands, jobs, onCallProducer)
+	err := app.Start(ctx, numWorkers)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if outputCFG.Filter == output.Kafka {
+		kafkaMessages, handler := oncall.NewTopicHandler()
+		onCallConsumer := getOnCallKafkaReceiver(kafkaCFG, handler)
+
+		controller.Add(output.BuildMessageChan[string](output.Kafka, kafkaMessages))
+		defer onCallConsumer.Close()
+	}
+	controller.Add(output.BuildMessageChan[string](output.CLI, app.GetOutput()))
+
+	output := output.FilterMessageChan[string](outputCFG.Filter, controller.Subscribe())
+	go run(ctx, cancel, app, output)
+
+	app.Wait()
+	controller.Close()
+	commands.Close()
+	closePG()
+	_, _ = fmt.Fprintln(os.Stdout, "done")
+}
+
+func getCommands(ctx context.Context) (*cli.CLI, func()) {
 	pool, err := getPool(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	commands, err := getCommands(out, pool)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	var (
-		jobs   = getJobs(ctx, getLines())
-		result = make(chan error, numJobs)
-	)
-
-	app := app2.NewApp(commands, jobs)
-	err = app.Start(ctx, numWorkers, result, out)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go func() {
-		defer cancel()
-
-		for {
-			select {
-			case _ = <-ctx.Done():
-				return
-			case err := <-result:
-				if errors.Is(err, cli.ErrExit) {
-					return
-				}
-				if err != nil {
-					_, _ = fmt.Fprintln(out, err)
-					_ = out.Flush()
-				}
-			}
-		}
-	}()
-
-	app.Wait()
-	commands.Close()
-	pool.Close()
-	_, _ = fmt.Fprintln(out, "done")
-}
-
-func getLines() chan string {
-	lines := make(chan string)
-
-	go func(lines chan<- string) {
-		defer close(lines)
-		scanner := bufio.NewScanner(os.Stdin)
-		for {
-			if !scanner.Scan() {
-				return
-			}
-			line := scanner.Text()
-			lines <- line
-		}
-	}(lines)
-
-	return lines
-}
-
-func getJobs(ctx context.Context, lines chan string) <-chan []string {
-	jobs := make(chan []string, numJobs)
-
-	go func(jobs chan<- []string, lines <-chan string) {
-		defer close(jobs)
-		for {
-			select {
-			case _ = <-ctx.Done():
-				return
-			case line, ok := <-lines:
-				if !ok {
-					return
-				}
-				args := strings.Split(line, " ")
-				jobs <- args
-			}
-		}
-	}(jobs, lines)
-
-	return jobs
-}
-
-func getCommands(out *bufio.Writer, pool *pgxpool.Pool) (*cli.CLI, error) {
 	transactionManager := transactor.NewTransactionManager(pool)
 
 	orderStorage := storage.NewOrderStorage(&transactionManager)
@@ -129,8 +82,7 @@ func getCommands(out *bufio.Writer, pool *pgxpool.Pool) (*cli.CLI, error) {
 	})
 	return cli.NewCLI(cli.Deps{
 		Service: &orderService,
-		Out:     out,
-	}), nil
+	}), pool.Close
 }
 
 func getPool(ctx context.Context) (*pgxpool.Pool, error) {

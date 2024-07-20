@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test integration kafka" type="GoTestRunConfiguration" factoryName="Go Test">
+    <module name="homework-1" />
+    <working_directory value="$PROJECT_DIR$/tests/kafka" />
+    <useCustomBuildTags value="true" />
+    <envs>
+      <env name="ENV" value="test" />
+      <env name="TEST_KAFKA_BROKER" value="localhost:9091" />
+    </envs>
+    <root_directory value="$PROJECT_DIR$" />
+    <kind value="PACKAGE" />
+    <package value="homework/tests/kafka" />
+    <directory value="$PROJECT_DIR$/tests/kafka" />
+    <filePath value="$PROJECT_DIR$" />
+    <framework value="gotest" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -4,8 +4,9 @@
     <working_directory value="$PROJECT_DIR$" />
     <envs>
       <env name="DATABASE_URL" value="postgres://postgres:password@localhost:5432/postgres?sslmode=disable" />
+      <env name="KAFKA_CONFIG_PATH" value="./config/kafka.yml" />
+      <env name="OUTPUT_CONFIG_PATH" value="./config/output.yml" />
       <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.json" />
-      <env name="ENV" value="debug" />
     </envs>
     <kind value="PACKAGE" />
     <package value="homework/cmd" />

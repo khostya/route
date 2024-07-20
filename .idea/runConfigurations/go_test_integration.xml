@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test integration" type="CompoundRunConfigurationType">
+    <toRun name="go test integration kafka" type="GoTestRunConfiguration" />
+    <toRun name="go test integration postgresql" type="GoTestRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>

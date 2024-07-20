@@ -13,5 +13,4 @@ var (
 	ErrWrapperIsNotValid    = errors.New("wrapper is not valid")
 	ErrWeightInKgInNotValid = errors.New("weight_in_kg is not valid")
 	ErrPriceInRubIsNotValid = errors.New("price_in_rub is not valid")
-	ErrExit                 = errors.New(exit)
 )

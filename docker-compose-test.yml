@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  postgres-test:
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: "/var/lib/postgresql-test/data/pgdata"
+    container_name: 'postgres-test-container'
+    volumes:
+      - postgres-test:/var/lib/postgresql-test/data
+    ports:
+      - "5431:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+
+volumes:
+  postgres-test:
+    name: postgres

@@ -1,6 +1,6 @@
 //go:build integration
 
-package tests
+package postgresql
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"homework/internal/model"
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
-	"homework/tests/ids"
+	"homework/tests/postgresql/ids"
 	"testing"
 )
 

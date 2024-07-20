@@ -1,12 +1,11 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"flag"
-	"fmt"
 	"homework/internal/dto"
 	"homework/internal/model"
+	"homework/pkg/output"
 	"slices"
 )
 
@@ -22,43 +21,44 @@ type (
 
 	Deps struct {
 		Service orderService
-		Out     *bufio.Writer
 	}
 
 	CLI struct {
 		service                 orderService
-		out                     *bufio.Writer
+		out                     *output.Controller[string]
 		commandList             []command
-		changeNumberWorkersChan chan int
+		changeNumberWorkersChan *output.Controller[int]
+		exit                    chan struct{}
 	}
 )
 
 func NewCLI(d Deps) *CLI {
-	changeNumberWorkers := make(chan int)
 	return &CLI{
 		service:                 d.Service,
-		out:                     d.Out,
 		commandList:             newCommandList(d.Service),
-		changeNumberWorkersChan: changeNumberWorkers,
+		changeNumberWorkersChan: output.NewController[int](),
+		out:                     output.NewController[string](),
+		exit:                    make(chan struct{}, 1),
 	}
 }
 
-func (c CLI) Run(ctx context.Context, args []string) error {
+func (c CLI) Run(ctx context.Context, args []string) {
 	if len(args) == 0 {
-		return fmt.Errorf("command isn't set")
+		c.out.Push("command isn't set")
+		return
 	}
-	defer c.out.Flush()
 
 	commandName := args[0]
 	switch commandName {
 	case help:
 		c.help()
-		return nil
+		return
 	case workers:
 		c.changeNumberWorkers(args[1:])
-		return nil
+		return
 	case exit:
-		return ErrExit
+		close(c.exit)
+		return
 	default:
 		handlerIndex := slices.IndexFunc(c.commandList, func(h command) bool {
 			return h.name == commandName
@@ -67,18 +67,22 @@ func (c CLI) Run(ctx context.Context, args []string) error {
 			break
 		}
 		out := c.commandList[handlerIndex].handler(ctx, args[1:])
-		if out == "" {
-			return nil
+		if out != "" {
+			c.out.Push(out)
 		}
-		fmt.Fprintln(c.out, out)
-		return nil
+		return
 	}
 
-	return fmt.Errorf("command isn't set")
+	c.out.Push("command isn't set")
+	return
 }
 
 func (c CLI) GetChangeNumberWorkers() <-chan int {
-	return c.changeNumberWorkersChan
+	return c.changeNumberWorkersChan.Subscribe()
+}
+
+func (c CLI) GetOutput() <-chan string {
+	return c.out.Subscribe()
 }
 
 func (c CLI) changeNumberWorkers(args []string) string {
@@ -93,17 +97,22 @@ func (c CLI) changeNumberWorkers(args []string) string {
 		return "N isn`t set"
 	}
 
-	c.changeNumberWorkersChan <- n
+	c.changeNumberWorkersChan.Push(n)
 	return ""
 }
 
 func (c CLI) help() {
-	fmt.Fprintln(c.out, "command list:")
+	c.out.Push("command list:")
 	for _, cmd := range c.commandList {
-		fmt.Fprintln(c.out, cmd)
+		c.out.Push(cmd.String())
 	}
 }
 
 func (c CLI) Close() {
-	close(c.changeNumberWorkersChan)
+	c.out.Close()
+	c.changeNumberWorkersChan.Close()
+}
+
+func (c CLI) Exit() <-chan struct{} {
+	return c.exit
 }

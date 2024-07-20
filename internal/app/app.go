@@ -1,10 +1,11 @@
 package app
 
 import (
-	"bufio"
 	"context"
 	"fmt"
+	"homework/internal/dto"
 	"homework/internal/model"
+	"homework/pkg/output"
 	"math"
 	"math/rand"
 	"sync"
@@ -14,8 +15,14 @@ import (
 
 type (
 	cli interface {
-		Run(ctx context.Context, args []string) error
+		Run(ctx context.Context, args []string)
 		GetChangeNumberWorkers() <-chan int
+		GetOutput() <-chan string
+		Exit() <-chan struct{}
+	}
+
+	onCallProducer interface {
+		SendAsyncMessage(message dto.CallMessage) error
 	}
 
 	App struct {
@@ -29,33 +36,40 @@ type (
 		wg sync.WaitGroup
 
 		isStarted atomic.Bool
+		onCall    onCallProducer
+		output    *output.Controller[string]
 	}
 )
 
-func NewApp(commands cli, jobs <-chan []string) *App {
+func NewApp(commands cli, jobs <-chan []string, onCall onCallProducer) *App {
+	output := output.NewController[string]()
+	output.Add(commands.GetOutput())
+
 	return &App{
 		stopWorker:  make(chan struct{}),
 		startWorker: make(chan struct{}),
 		cli:         commands,
 		jobs:        jobs,
+		onCall:      onCall,
+		output:      output,
 	}
 }
 
-func (a *App) Start(ctx context.Context, n int, result chan<- error, out *bufio.Writer) error {
+func (a *App) Start(ctx context.Context, n int) error {
 	if a.isStarted.Swap(true) {
 		return ErrHasAlreadyStarted
 	}
 
 	go a.changeNumberWorkers(a.cli.GetChangeNumberWorkers())
 	for i := 0; i < n; i++ {
-		go a.worker(ctx, i, result, out)
+		go a.worker(ctx, i)
 		a.wg.Add(1)
 		a.numberWorkers++
 	}
 	return nil
 }
 
-func (a *App) worker(ctx context.Context, n int, result chan<- error, out *bufio.Writer) {
+func (a *App) worker(ctx context.Context, n int) {
 	defer a.wg.Done()
 
 	for {
@@ -66,13 +80,19 @@ func (a *App) worker(ctx context.Context, n int, result chan<- error, out *bufio
 			if !ok {
 				return
 			}
-			_, _ = fmt.Fprintf(out, "start: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat))
-			result <- a.cli.Run(ctx, job)
-			_, _ = fmt.Fprintf(out, "stop: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat))
 
-			_ = out.Flush()
+			a.output.Push(fmt.Sprintf("start: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat)))
+			a.cli.Run(ctx, job)
+			a.output.Push(fmt.Sprintf("stop: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat)))
+
+			_ = a.onCall.SendAsyncMessage(dto.CallMessage{
+				CalledAt: time.Now(),
+				Method:   job[0],
+				Args:     job[1:],
+			})
+
 		case <-a.startWorker:
-			go a.worker(ctx, rand.Intn(math.MaxInt), result, out)
+			go a.worker(ctx, rand.Intn(math.MaxInt))
 			a.wg.Add(1)
 		case <-a.stopWorker:
 			return
@@ -82,6 +102,14 @@ func (a *App) worker(ctx context.Context, n int, result chan<- error, out *bufio
 
 func (a *App) Wait() {
 	a.wg.Wait()
+}
+
+func (a *App) GetOutput() <-chan string {
+	return a.output.Subscribe()
+}
+
+func (a *App) Exit() <-chan struct{} {
+	return a.cli.Exit()
 }
 
 func (a *App) changeNumberWorkers(workers <-chan int) {

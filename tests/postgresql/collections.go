@@ -1,6 +1,6 @@
 //go:build integration
 
-package tests
+package postgresql
 
 import (
 	"github.com/shopspring/decimal"
