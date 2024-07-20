@@ -84,9 +84,10 @@ service Order {
 }
 
 enum OrderStatus {
-  ORDER_STATUS_DELIVERED = 0;
-  ORDER_STATUS_ISSUED = 1;
-  ORDER_STATUS_REFUNDED = 2;
+  ORDER_STATUS_ANY = 0;
+  ORDER_STATUS_DELIVERED = 1;
+  ORDER_STATUS_ISSUED = 2;
+  ORDER_STATUS_REFUNDED = 3;
 }
 
 message DeliverOrderRequest{

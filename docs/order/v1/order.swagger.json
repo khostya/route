@@ -197,11 +197,12 @@
             "required": false,
             "type": "string",
             "enum": [
+              "ORDER_STATUS_ANY",
               "ORDER_STATUS_DELIVERED",
               "ORDER_STATUS_ISSUED",
               "ORDER_STATUS_REFUNDED"
             ],
-            "default": "ORDER_STATUS_DELIVERED"
+            "default": "ORDER_STATUS_ANY"
           }
         ],
         "tags": [
@@ -288,11 +289,12 @@
     "orderOrderStatus": {
       "type": "string",
       "enum": [
+        "ORDER_STATUS_ANY",
         "ORDER_STATUS_DELIVERED",
         "ORDER_STATUS_ISSUED",
         "ORDER_STATUS_REFUNDED"
       ],
-      "default": "ORDER_STATUS_DELIVERED"
+      "default": "ORDER_STATUS_ANY"
     },
     "orderRefundOrderRequest": {
       "type": "object",

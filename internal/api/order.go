@@ -155,6 +155,7 @@ func toGRPCError(err error) error {
 
 func grpcOrderStatusToDomain(orderStatus order.OrderStatus) model.Status {
 	return map[order.OrderStatus]model.Status{
+		order.OrderStatus_ORDER_STATUS_ANY:       model.StatusNone,
 		order.OrderStatus_ORDER_STATUS_DELIVERED: model.StatusDelivered,
 		order.OrderStatus_ORDER_STATUS_ISSUED:    model.StatusIssued,
 		order.OrderStatus_ORDER_STATUS_REFUNDED:  model.StatusRefunded,
