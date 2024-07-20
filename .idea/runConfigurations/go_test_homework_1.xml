@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test homework-1" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+    <module name="homework-1" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="ENV" value="test" />
+    </envs>
+    <kind value="DIRECTORY" />
+    <package value="homework" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <framework value="gotest" />
+    <method v="2" />
+  </configuration>
+</component>

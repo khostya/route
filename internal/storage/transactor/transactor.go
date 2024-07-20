@@ -1,3 +1,4 @@
+//go:generate mockgen -source ./transactor.go -destination=./mocks/mock_transactor.go -package=mock_transactor
 package transactor
 
 import (
@@ -12,6 +13,13 @@ import (
 const key = "tx"
 
 type (
+	// Transactor .
+	Transactor interface {
+		RunRepeatableRead(ctx context.Context, fx func(ctxTX context.Context) error) error
+		Unwrap(err error) error
+		GetQueryEngine(ctx context.Context) QueryEngine
+	}
+
 	QueryEngine interface {
 		Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 		Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)

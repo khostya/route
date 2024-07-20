@@ -5,19 +5,19 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"homework/internal/dto"
 	"homework/internal/model"
-	"homework/internal/service"
 	"slices"
 )
 
 type (
 	orderService interface {
-		Deliver(ctx context.Context, order service.DeliverOrderParam) error
-		ListUserOrders(ctx context.Context, userID string, count uint) ([]model.Order, error)
-		RefundedOrders(ctx context.Context, param service.RefundedOrdersParam) ([]model.Order, error)
+		Deliver(ctx context.Context, order dto.DeliverOrderParam) error
+		ListUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error)
+		RefundedOrders(ctx context.Context, param dto.PageParam) ([]model.Order, error)
 		ReturnOrder(ctx context.Context, id string) error
 		IssueOrders(ctx context.Context, ids []string) error
-		RefundOrder(ctx context.Context, param service.RefundOrderParam) error
+		RefundOrder(ctx context.Context, param dto.RefundOrderParam) error
 	}
 
 	Deps struct {
