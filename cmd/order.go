@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func GetOrderService(ctx context.Context) (*service.Order, func()) {
+func GetOrderService(ctx context.Context) (*service.OrderService, func()) {
 	pool, err := getPool(ctx)
 	if err != nil {
 		log.Fatalln(err)

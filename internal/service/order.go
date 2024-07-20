@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"homework/internal/dto"
@@ -45,78 +46,114 @@ type (
 		WrapperStorage     wrapperStorage
 	}
 
-	Order struct {
+	OrderService struct {
 		orderStorage       orderStorage
 		transactionManager transactionManager
 		wrapperStorage     wrapperStorage
 	}
 )
 
-func NewOrder(d Deps) Order {
-	return Order{
+func NewOrder(d Deps) OrderService {
+	return OrderService{
 		orderStorage:       d.Storage,
 		transactionManager: d.TransactionManager,
 		wrapperStorage:     d.WrapperStorage,
 	}
 }
 
-func (o *Order) Deliver(ctx context.Context, order dto.DeliverOrderParam) error {
-	if order.ExpirationDate.Before(time.Now()) {
+func (o *OrderService) Deliver(ctx context.Context, param dto.DeliverOrderParam) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.Deliver")
+	defer span.Finish()
+
+	hash := hash2.GenerateHash()
+
+	return o.deliver(ctx, param, hash)
+}
+
+func (o *OrderService) deliver(ctx context.Context, param dto.DeliverOrderParam, hash string) error {
+	if param.ExpirationDate.Before(time.Now()) {
 		return ErrExpIsNotValid
 	}
-	if order.Wrapper != nil && !order.Wrapper.WillFitGram(order.WeightInGram) {
-		message := fmt.Sprintf("capacity_in_gram = %v", order.Wrapper.GetCapacityInGram())
+	if param.Wrapper != nil && !param.Wrapper.WillFitGram(param.WeightInGram) {
+		message := fmt.Sprintf("capacity_in_gram = %v", param.Wrapper.GetCapacityInGram())
 		return errors.Wrap(ErrOrderWeightGreaterThanWrapperCapacity, message)
 	}
 
 	wrapperPriceInRub := wrapper.PriceInRub(decimal.NewFromInt(0))
-	if order.Wrapper != nil {
-		wrapperPriceInRub = order.Wrapper.GetPriceInRub()
+	if param.Wrapper != nil {
+		wrapperPriceInRub = param.Wrapper.GetPriceInRub()
 	}
 
-	hash := hash2.GenerateHash()
 	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
 		err := o.orderStorage.AddOrder(ctx, model.Order{
-			ID:              order.ID,
-			RecipientID:     order.RecipientID,
+			ID:              param.ID,
+			RecipientID:     param.RecipientID,
 			Status:          model.StatusDelivered,
 			StatusUpdatedAt: time.Now(),
-			ExpirationDate:  order.ExpirationDate,
-			WeightInGram:    order.WeightInGram,
-			PriceInRub:      order.PriceInRub.Add(wrapperPriceInRub),
+			ExpirationDate:  param.ExpirationDate,
+			WeightInGram:    param.WeightInGram,
+			PriceInRub:      param.PriceInRub.Add(wrapperPriceInRub),
 		}, hash)
 		if err != nil {
 			return err
 		}
 
-		if order.Wrapper == nil {
+		if param.Wrapper == nil {
 			return nil
 		}
 
-		return o.wrapperStorage.AddWrapper(ctx, *order.Wrapper, order.ID)
+		return o.wrapperStorage.AddWrapper(ctx, *param.Wrapper, param.ID)
 	})
 
 	return o.transactionManager.Unwrap(err)
 }
 
-func (o *Order) ListUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error) {
+func (o *OrderService) ListUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.ListUserOrders")
+	defer span.Finish()
+
 	_ = hash2.GenerateHash()
+	return o.listUserOrders(ctx, param)
+}
+
+func (o *OrderService) listUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error) {
 	return o.orderStorage.ListUserOrders(ctx, param.UserId, param.Count, model.StatusDelivered)
 }
 
-func (o *Order) ListOrders(ctx context.Context, param dto.ListOrdersParam) ([]model.Order, error) {
+func (o *OrderService) ListOrders(ctx context.Context, param dto.ListOrdersParam) ([]model.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.ListOrders")
+	defer span.Finish()
+
 	_ = hash2.GenerateHash()
+	return o.listOrders(ctx, param)
+}
+
+func (o *OrderService) listOrders(ctx context.Context, param dto.ListOrdersParam) ([]model.Order, error) {
 	return o.orderStorage.ListOrders(ctx, param)
 }
 
-func (o *Order) RefundedOrders(ctx context.Context, param dto.PageParam) ([]model.Order, error) {
+func (o *OrderService) RefundedOrders(ctx context.Context, param dto.PageParam) ([]model.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.RefundedOrders")
+	defer span.Finish()
+
 	_ = hash2.GenerateHash()
+	return o.refundedOrders(ctx, param)
+}
+
+func (o *OrderService) refundedOrders(ctx context.Context, param dto.PageParam) ([]model.Order, error) {
 	return o.orderStorage.RefundedOrders(ctx, param)
 }
 
-func (o *Order) ReturnOrder(ctx context.Context, id string) error {
+func (o *OrderService) ReturnOrder(ctx context.Context, id string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.ReturnOrder")
+	defer span.Finish()
+
 	_ = hash2.GenerateHash()
 
+	return o.returnOrder(ctx, id)
+}
+
+func (o *OrderService) returnOrder(ctx context.Context, id string) error {
 	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
 		order, err := o.orderStorage.GetOrderById(ctx, id)
 		if err != nil {
@@ -140,13 +177,20 @@ func (o *Order) ReturnOrder(ctx context.Context, id string) error {
 	return o.transactionManager.Unwrap(err)
 }
 
-func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
+func (o *OrderService) IssueOrders(ctx context.Context, ids []string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.IssueOrders")
+	defer span.Finish()
+
 	hashes, err := dto.GenHashes(ids)
 	if err != nil {
 		return err
 	}
 
-	err = o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
+	return o.issueOrders(ctx, ids, hashes)
+}
+
+func (o *OrderService) issueOrders(ctx context.Context, ids []string, hashes dto.IdsWithHashes) error {
+	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
 		orders, err := o.orderStorage.ListOrdersByIds(ctx, ids, model.StatusDelivered)
 		if err != nil {
 			return err
@@ -176,13 +220,20 @@ func (o *Order) IssueOrders(ctx context.Context, ids []string) error {
 	return o.transactionManager.Unwrap(err)
 }
 
-func (o *Order) RefundOrder(ctx context.Context, param dto.RefundOrderParam) error {
+func (o *OrderService) RefundOrder(ctx context.Context, param dto.RefundOrderParam) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.OrderService.RefundOrder")
+	defer span.Finish()
+
 	hashes, err := dto.GenHashes([]string{param.ID})
 	if err != nil {
 		return err
 	}
 
-	err = o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
+	return o.refundOrder(ctx, param, hashes)
+}
+
+func (o *OrderService) refundOrder(ctx context.Context, param dto.RefundOrderParam, hashes dto.IdsWithHashes) error {
+	err := o.transactionManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
 		order, err := o.orderStorage.GetOrderById(ctx, param.ID)
 		if err != nil {
 			return err

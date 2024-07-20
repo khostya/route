@@ -123,7 +123,7 @@ func TestOrderService_Deliver(t *testing.T) {
 				TransactionManager: mocks.mockTransactor,
 			})
 
-			err := orderService.Deliver(ctx, tt.input)
+			err := orderService.deliver(ctx, tt.input, "Ferqr")
 
 			require.ErrorIs(t, err, tt.err)
 		})
@@ -212,7 +212,7 @@ func TestOrderService_ReturnOrder(t *testing.T) {
 				TransactionManager: mocks.mockTransactor,
 			})
 
-			err := orderService.ReturnOrder(ctx, tt.input)
+			err := orderService.returnOrder(ctx, tt.input)
 
 			require.ErrorIs(t, err, tt.err)
 		})
@@ -297,7 +297,12 @@ func TestOrderService_RefundOrder(t *testing.T) {
 				TransactionManager: mocks.mockTransactor,
 			})
 
-			err := orderService.RefundOrder(ctx, tt.input)
+			hashes, err := dto.NewIdsWithHashes([]string{"1"}, []string{"2"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = orderService.refundOrder(ctx, tt.input, hashes)
 
 			require.ErrorIs(t, err, tt.err)
 		})
@@ -423,7 +428,12 @@ func TestOrderService_IssueOrders(t *testing.T) {
 				TransactionManager: mocks.mockTransactor,
 			})
 
-			err := orderService.IssueOrders(ctx, tt.input)
+			hashes, err := dto.NewIdsWithHashes(tt.input, tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = orderService.issueOrders(ctx, tt.input, hashes)
 
 			require.ErrorIs(t, err, tt.err)
 		})

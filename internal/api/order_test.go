@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"homework/internal/imdb"
 	"homework/internal/model"
 	"homework/internal/service"
 	mock_service "homework/internal/service/mocks"
@@ -111,7 +112,7 @@ func TestDeliver(t *testing.T) {
 			mocks := newMocks(t)
 			tt.mockFn(mocks)
 
-			service := NewOrderService(mocks.mockOrderService)
+			service := NewOrderService(mocks.mockOrderService, imdb.NewOrdersIMDB(1, 0))
 			_, err := service.DeliverOrder(ctx, tt.input)
 			status, ok := status.FromError(err)
 			if ok && tt.code == codes.OK {
@@ -170,7 +171,7 @@ func TestListOrders(t *testing.T) {
 			mocks := newMocks(t)
 			tt.mockFn(mocks)
 
-			service := NewOrderService(mocks.mockOrderService)
+			service := NewOrderService(mocks.mockOrderService, imdb.NewOrdersIMDB(1, 0))
 			orders, err := service.ListOrders(ctx, tt.input)
 			status, _ := status.FromError(err)
 
@@ -262,7 +263,7 @@ func TestRefundOrder(t *testing.T) {
 			mocks := newMocks(t)
 			tt.mockFn(mocks)
 
-			service := NewOrderService(mocks.mockOrderService)
+			service := NewOrderService(mocks.mockOrderService, imdb.NewOrdersIMDB(1, 0))
 			_, err := service.RefundOrder(ctx, tt.input)
 			status, _ := status.FromError(err)
 
@@ -348,7 +349,7 @@ func TestIssueOrder(t *testing.T) {
 			mocks := newMocks(t)
 			tt.mockFn(mocks)
 
-			service := NewOrderService(mocks.mockOrderService)
+			service := NewOrderService(mocks.mockOrderService, imdb.NewOrdersIMDB(1, 0))
 			_, err := service.IssueOrders(ctx, tt.input)
 			status, _ := status.FromError(err)
 
@@ -424,7 +425,7 @@ func TestReturnOrder(t *testing.T) {
 			mocks := newMocks(t)
 			tt.mockFn(mocks)
 
-			service := NewOrderService(mocks.mockOrderService)
+			service := NewOrderService(mocks.mockOrderService, imdb.NewOrdersIMDB(1, 0))
 			_, err := service.ReturnOrder(ctx, tt.input)
 			status, _ := status.FromError(err)
 

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/go-chi/cors"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"homework/config"
 	"homework/internal/api"
 	"homework/internal/api/middleware"
+	"homework/internal/imdb"
 	"homework/internal/infrastructure/app/oncall"
 	"homework/internal/service"
 	"homework/pkg/api/order/v1"
@@ -20,11 +22,9 @@ import (
 	"sync"
 )
 
-func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderService *service.Order, producer *oncall.KafkaProducer) *sync.WaitGroup {
-	cfg, err := config.NewApiConfig()
-	if err != nil {
-		log.Fatalln(err)
-	}
+func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderService *service.OrderService, producer *oncall.KafkaProducer) *sync.WaitGroup {
+	cfgIMDB := config.MustNewIMDBConfig()
+	cfg := config.MustNewApiConfig()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GrpcPort))
 	log.Println("Start")
@@ -45,6 +45,11 @@ func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderSe
 	}
 
 	go func() {
+		promHandler := promhttp.Handler()
+		mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+			promHandler.ServeHTTP(w, r)
+		})
+
 		err := gwServer.ListenAndServe()
 		if err != nil {
 			cancelFunc()
@@ -52,7 +57,9 @@ func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderSe
 	}()
 
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(middleware.OnCall(producer)))
-	order.RegisterOrderServer(grpcServer, api.NewOrderService(orderService))
+
+	ordersIMDB := imdb.NewOrdersIMDB(int(cfgIMDB.Capacity), cfgIMDB.TTL)
+	order.RegisterOrderServer(grpcServer, api.NewOrderService(orderService, ordersIMDB))
 	go func() {
 		err := grpcServer.Serve(lis)
 		if err != nil {

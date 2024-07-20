@@ -5,6 +5,7 @@ import (
 	"context"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/opentracing/opentracing-go"
 	"homework/internal/model/wrapper"
 	"homework/internal/storage/schema"
 	"homework/internal/storage/transactor"
@@ -25,6 +26,9 @@ func NewWrapperStorage(provider transactor.QueryEngineProvider) *WrapperStorage 
 }
 
 func (w *WrapperStorage) AddWrapper(ctx context.Context, wrapper wrapper.Wrapper, orderId string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.WrapperStorage.AddWrapper")
+	defer span.Finish()
+
 	db := w.QueryEngineProvider.GetQueryEngine(ctx)
 	record := schema.NewWrapper(wrapper, orderId)
 	query := sq.Insert(wrapperTable).
@@ -48,6 +52,9 @@ func (w *WrapperStorage) AddWrapper(ctx context.Context, wrapper wrapper.Wrapper
 }
 
 func (w *WrapperStorage) Delete(ctx context.Context, orderId string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.WrapperStorage.Delete")
+	defer span.Finish()
+
 	db := w.QueryEngineProvider.GetQueryEngine(ctx)
 
 	query := sq.Delete(wrapperTable).
@@ -68,6 +75,9 @@ func (w *WrapperStorage) Delete(ctx context.Context, orderId string) error {
 }
 
 func (w *WrapperStorage) GetByOrderId(ctx context.Context, orderId string) (wrapper.Wrapper, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.WrapperStorage.GetByOrderId")
+	defer span.Finish()
+
 	db := w.QueryEngineProvider.GetQueryEngine(ctx)
 
 	columns := append(schema.Wrapper{}.SelectColumns())
