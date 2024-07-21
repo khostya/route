@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"homework/internal/cache"
 	"homework/internal/dto"
 	"homework/internal/model"
 	"homework/internal/storage"
@@ -28,7 +29,7 @@ func TestOrders(t *testing.T) {
 func (s *OrderTestSuite) SetupSuite() {
 	s.T().Parallel()
 	s.transactor = transactor.NewTransactionManager(db.GetPool())
-	s.orderStorage = storage.NewOrderStorage(&s.transactor)
+	s.orderStorage = storage.NewOrderStorage(&s.transactor, cache.NewOrdersCache(1, 0))
 	s.ctx = context.Background()
 }
 

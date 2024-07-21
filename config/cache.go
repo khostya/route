@@ -6,23 +6,23 @@ import (
 	"time"
 )
 
-type IMDBConfig struct {
+type CacheConfig struct {
 	TTL      time.Duration `yaml:"ttl"`
 	Capacity uint          `yaml:"capacity"`
 }
 
-func NewIMDBConfig() (IMDBConfig, error) {
-	path := os.Getenv("IMDB_CONFIG_PATH")
+func NewCacheConfig() (CacheConfig, error) {
+	path := os.Getenv("CACHE_CONFIG_PATH")
 	if path == "" {
-		return IMDBConfig{}, ErrIMDBConfigPathIsEmpty
+		return CacheConfig{}, ErrCacheConfigPathIsEmpty
 	}
-	var cfg IMDBConfig
+	var cfg CacheConfig
 	err := cleanenv.ReadConfig(path, &cfg)
 	return cfg, err
 }
 
-func MustNewIMDBConfig() IMDBConfig {
-	cfg, err := NewIMDBConfig()
+func MustNewCacheConfig() CacheConfig {
+	cfg, err := NewCacheConfig()
 	if err != nil {
 		panic(err)
 	}

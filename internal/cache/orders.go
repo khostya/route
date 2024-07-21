@@ -1,4 +1,4 @@
-package imdb
+package cache
 
 import (
 	"homework/internal/model"
@@ -10,8 +10,8 @@ import (
 type (
 	KeyOrder = string
 
-	OrdersIMDB struct {
-		imdb IMDB[KeyOrder, []model.Order]
+	OrdersCache struct {
+		cache Cache[KeyOrder, []model.Order]
 
 		getKeyByID map[string][]KeyOrder
 
@@ -19,18 +19,18 @@ type (
 	}
 )
 
-func NewOrdersIMDB(cap int, ttl time.Duration) *OrdersIMDB {
-	return &OrdersIMDB{
-		imdb:       lfu.NewLFU[KeyOrder, []model.Order](cap, ttl),
+func NewOrdersCache(cap int, ttl time.Duration) *OrdersCache {
+	return &OrdersCache{
+		cache:      lfu.NewLFU[KeyOrder, []model.Order](cap, ttl),
 		getKeyByID: make(map[string][]KeyOrder),
 	}
 }
 
-func (o *OrdersIMDB) Put(k string, v []model.Order) {
+func (o *OrdersCache) Put(k string, v []model.Order) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
-	o.imdb.Put(k, v)
+	o.cache.Put(k, v)
 
 	for _, order := range v {
 		_, ok := o.getKeyByID[order.ID]
@@ -41,23 +41,28 @@ func (o *OrdersIMDB) Put(k string, v []model.Order) {
 	}
 }
 
-func (o *OrdersIMDB) RemoveById(id string) bool {
+func (o *OrdersCache) RemoveById(id string) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	keys, ok := o.getKeyByID[id]
 	if !ok {
-		return false
+		return
 	}
 
 	for _, k := range keys {
-		o.imdb.Remove(k)
+		o.cache.Remove(k)
 	}
-	return true
 }
 
-func (o *OrdersIMDB) Get(k string) ([]model.Order, bool) {
+func (o *OrdersCache) RemoveByIds(ids []string) {
+	for _, id := range ids {
+		o.RemoveById(id)
+	}
+}
+
+func (o *OrdersCache) Get(k string) ([]model.Order, bool) {
 	o.lock.RLock()
 	defer o.lock.RUnlock()
 
-	return o.imdb.Get(k)
+	return o.cache.Get(k)
 }

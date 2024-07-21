@@ -21,7 +21,8 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	tracer.MustSetup(ctx, name)
+	tracerCloser := tracer.MustSetup(name)
+	defer tracerCloser.Close()
 
 	command, closeDB := cmd.GetOrderService(ctx)
 	producer := cmd.GetOnCallKafkaSender(ctx)

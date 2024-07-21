@@ -1,15 +1,15 @@
 package tracer
 
 import (
-	"context"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
 	traceconfig "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-lib/metrics/prometheus"
+	"io"
 	"log"
 )
 
-func MustSetup(ctx context.Context, serviceName string) {
+func MustSetup(serviceName string) io.Closer {
 	cfg, err := traceconfig.FromEnv()
 	if err != nil {
 		panic(err)
@@ -25,12 +25,7 @@ func MustSetup(ctx context.Context, serviceName string) {
 		log.Fatalf("ERROR: cannot init Jaeger %s", err)
 	}
 
-	go func() {
-		<-ctx.Done()
-		if err = closer.Close(); err != nil {
-			log.Printf("error closing tracer: %s\n", err)
-		}
-	}()
-
 	opentracing.SetGlobalTracer(tracer)
+
+	return closer
 }

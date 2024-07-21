@@ -4,13 +4,13 @@
     <working_directory value="$PROJECT_DIR$" />
     <envs>
       <env name="API_CONFIG_PATH" value="./config/api.yml" />
+      <env name="CACHE_CONFIG_PATH" value="./config/cache.yml" />
       <env name="DATABASE_URL" value="postgres://postgres:password@localhost:5432/postgres?sslmode=disable" />
       <env name="JAEGER_AGENT_HOST" value="localhost" />
       <env name="JAEGER_AGENT_PORT" value="6831" />
       <env name="KAFKA_CONFIG_PATH" value="./config/kafka.yml" />
       <env name="OUTPUT_CONFIG_PATH" value="./config/output.yml" />
       <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.json" />
-      <env name="IMDB_CONFIG_PATH" value="./config/imdb.yml" />
     </envs>
     <kind value="PACKAGE" />
     <package value="homework/cmd/grpc" />

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"homework/config"
+	"homework/internal/cache"
 	"homework/internal/service"
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
@@ -13,6 +15,9 @@ import (
 )
 
 func GetOrderService(ctx context.Context) (*service.OrderService, func()) {
+	cfgCache := config.MustNewCacheConfig()
+	ordersCache := cache.NewOrdersCache(int(cfgCache.Capacity), cfgCache.TTL)
+
 	pool, err := getPool(ctx)
 	if err != nil {
 		log.Fatalln(err)
@@ -20,7 +25,7 @@ func GetOrderService(ctx context.Context) (*service.OrderService, func()) {
 
 	transactionManager := transactor.NewTransactionManager(pool)
 
-	orderStorage := storage.NewOrderStorage(&transactionManager)
+	orderStorage := storage.NewOrderStorage(&transactionManager, ordersCache)
 	wrapperStorage := storage.NewWrapperStorage(&transactionManager)
 
 	var orderService = service.NewOrder(service.Deps{

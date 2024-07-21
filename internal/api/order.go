@@ -20,7 +20,6 @@ import (
 type (
 	OrderService struct {
 		service orderService
-		cache   ordersCache
 		order.UnimplementedOrderServer
 	}
 
@@ -31,18 +30,11 @@ type (
 		IssueOrders(ctx context.Context, ids []string) error
 		RefundOrder(ctx context.Context, param dto.RefundOrderParam) error
 	}
-
-	ordersCache interface {
-		Get(string) ([]model.Order, bool)
-		Put(string, []model.Order)
-		RemoveById(string) bool
-	}
 )
 
-func NewOrderService(orderService orderService, cache ordersCache) *OrderService {
+func NewOrderService(orderService orderService) *OrderService {
 	return &OrderService{
 		service: orderService,
-		cache:   cache,
 	}
 }
 
@@ -60,7 +52,6 @@ func (o *OrderService) ReturnOrder(ctx context.Context, req *order.ReturnOrderRe
 		return nil, err
 	}
 
-	o.cache.RemoveById(req.GetId())
 	return &emptypb.Empty{}, nil
 }
 
@@ -77,9 +68,6 @@ func (o *OrderService) IssueOrders(ctx context.Context, req *order.IssueOrdersRe
 		return nil, err
 	}
 
-	for _, id := range req.Ids {
-		o.cache.RemoveById(id)
-	}
 	metrics.AddIssuedOrders(len(req.Ids))
 	return &emptypb.Empty{}, nil
 }
@@ -101,7 +89,6 @@ func (o *OrderService) RefundOrder(ctx context.Context, req *order.RefundOrderRe
 		return nil, err
 	}
 
-	o.cache.RemoveById(req.GetOrderID())
 	return &emptypb.Empty{}, nil
 }
 
@@ -120,19 +107,12 @@ func (o *OrderService) ListOrders(ctx context.Context, req *order.ListOrdersRequ
 		Status: grpcOrderStatusToDomain(req.GetStatus()),
 	}
 
-	cachedOrders, ok := o.cache.Get(param.String())
-	if ok {
-		return o.buildListOrderResp(cachedOrders), nil
-	}
-
 	orders, err := o.service.ListOrders(ctx, param)
 	if err := toGRPCError(err); err != nil {
 		return nil, err
 	}
 
-	o.cache.Put(param.String(), orders)
-	resp := o.buildListOrderResp(orders)
-	return resp, nil
+	return o.buildListOrderResp(orders), nil
 }
 
 func (o *OrderService) buildListOrderResp(orders []model.Order) *order.ListOrdersResponse {
@@ -175,7 +155,6 @@ func (o *OrderService) DeliverOrder(ctx context.Context, req *order.DeliverOrder
 		return nil, err
 	}
 
-	o.cache.RemoveById(req.GetOrderID())
 	return &emptypb.Empty{}, nil
 }
 

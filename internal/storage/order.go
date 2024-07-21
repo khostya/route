@@ -24,11 +24,19 @@ const (
 type (
 	OrderStorage struct {
 		transactor.QueryEngineProvider
+		ordersCache ordersCache
+	}
+
+	ordersCache interface {
+		Get(string) ([]model.Order, bool)
+		Put(string, []model.Order)
+		RemoveById(string)
+		RemoveByIds([]string)
 	}
 )
 
-func NewOrderStorage(provider transactor.QueryEngineProvider) *OrderStorage {
-	return &OrderStorage{provider}
+func NewOrderStorage(provider transactor.QueryEngineProvider, ordersCache ordersCache) *OrderStorage {
+	return &OrderStorage{provider, ordersCache}
 }
 
 func (s *OrderStorage) RefundedOrders(ctx context.Context, get dto.PageParam) ([]model.Order, error) {
@@ -95,6 +103,11 @@ func (s *OrderStorage) ListOrdersByIds(ctx context.Context, ids []string, status
 }
 
 func (s *OrderStorage) get(ctx context.Context, param dto.GetParam) ([]model.Order, error) {
+	cachedOrders, ok := s.ordersCache.Get(param.String())
+	if ok {
+		return cachedOrders, nil
+	}
+
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	n := 1
 
@@ -136,7 +149,13 @@ func (s *OrderStorage) get(ctx context.Context, param dto.GetParam) ([]model.Ord
 		return []model.Order{}, err
 	}
 
-	return schema.ExtractOrdersFromWrapperOrder(records)
+	orders, err := schema.ExtractOrdersFromWrapperOrder(records)
+	if err != nil {
+		return nil, err
+	}
+
+	s.ordersCache.Put(param.String(), orders)
+	return orders, nil
 }
 
 func (s *OrderStorage) UpdateStatus(ctx context.Context, ids dto.IdsWithHashes, status model.Status) error {
@@ -167,6 +186,8 @@ func (s *OrderStorage) UpdateStatus(ctx context.Context, ids dto.IdsWithHashes, 
 	if err == nil && tag.RowsAffected() == 0 {
 		return ErrNotFound
 	}
+
+	s.ordersCache.RemoveByIds(ids.Ids)
 	return err
 }
 
@@ -204,5 +225,7 @@ func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
 	if err == nil && tag.RowsAffected() == 0 {
 		return ErrNotFound
 	}
+
+	s.ordersCache.RemoveById(id)
 	return err
 }

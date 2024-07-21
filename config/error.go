@@ -10,5 +10,5 @@ var (
 	ErrOutputFilterDoesNotExits  = errors.New("output filter does not exits")
 	ErrKafkaConfigPathIsEmpty    = errors.New("KAFKA_CONFIG_PATH is empty")
 	ErrApiConfigPathIsEmpty      = errors.New("API_CONFIG_PATH is empty")
-	ErrIMDBConfigPathIsEmpty     = errors.New("IMDB_CONFIG_PATH is empty")
+	ErrCacheConfigPathIsEmpty    = errors.New("CACHE_CONFIG_PATH is empty")
 )

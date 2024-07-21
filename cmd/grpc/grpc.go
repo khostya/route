@@ -11,7 +11,6 @@ import (
 	"homework/config"
 	"homework/internal/api"
 	"homework/internal/api/middleware"
-	"homework/internal/imdb"
 	"homework/internal/infrastructure/app/oncall"
 	"homework/internal/service"
 	"homework/pkg/api/order/v1"
@@ -23,7 +22,6 @@ import (
 )
 
 func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderService *service.OrderService, producer *oncall.KafkaProducer) *sync.WaitGroup {
-	cfgIMDB := config.MustNewIMDBConfig()
 	cfg := config.MustNewApiConfig()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GrpcPort))
@@ -58,8 +56,7 @@ func startGrpcServer(ctx context.Context, cancelFunc context.CancelFunc, orderSe
 
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(middleware.OnCall(producer)))
 
-	ordersIMDB := imdb.NewOrdersIMDB(int(cfgIMDB.Capacity), cfgIMDB.TTL)
-	order.RegisterOrderServer(grpcServer, api.NewOrderService(orderService, ordersIMDB))
+	order.RegisterOrderServer(grpcServer, api.NewOrderService(orderService))
 	go func() {
 		err := grpcServer.Serve(lis)
 		if err != nil {
