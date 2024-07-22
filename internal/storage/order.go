@@ -43,7 +43,7 @@ func (s *OrderStorage) RefundedOrders(ctx context.Context, get dto.PageParam) ([
 	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.RefundedOrders")
 	defer span.Finish()
 
-	offset := get.Size * get.Page
+	offset := get.Size * (get.Page - 1)
 	return s.get(ctx, dto.GetParam{Limit: get.Size, Offset: offset, Status: model.StatusRefunded, Order: desc})
 }
 
@@ -186,9 +186,12 @@ func (s *OrderStorage) UpdateStatus(ctx context.Context, ids dto.IdsWithHashes, 
 	if err == nil && tag.RowsAffected() == 0 {
 		return ErrNotFound
 	}
+	if err != nil {
+		return err
+	}
 
 	s.ordersCache.RemoveByIds(ids.Ids)
-	return err
+	return nil
 }
 
 func (s *OrderStorage) GetOrderById(ctx context.Context, id string) (model.Order, error) {
@@ -225,7 +228,10 @@ func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
 	if err == nil && tag.RowsAffected() == 0 {
 		return ErrNotFound
 	}
+	if err != nil {
+		return err
+	}
 
 	s.ordersCache.RemoveById(id)
-	return err
+	return nil
 }

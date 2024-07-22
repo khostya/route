@@ -44,6 +44,11 @@ func (o *OrdersCache) Put(k string, v []model.Order) {
 func (o *OrdersCache) RemoveById(id string) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
+
+	o.removeById(id)
+}
+
+func (o *OrdersCache) removeById(id string) {
 	keys, ok := o.getKeyByID[id]
 	if !ok {
 		return
@@ -52,11 +57,15 @@ func (o *OrdersCache) RemoveById(id string) {
 	for _, k := range keys {
 		o.cache.Remove(k)
 	}
+	delete(o.getKeyByID, id)
 }
 
 func (o *OrdersCache) RemoveByIds(ids []string) {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+
 	for _, id := range ids {
-		o.RemoveById(id)
+		o.removeById(id)
 	}
 }
 
