@@ -4,6 +4,7 @@ package postgresql
 
 import (
 	"context"
+	"github.com/jackc/puddle"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"homework/internal/cache"
@@ -12,7 +13,10 @@ import (
 	"homework/internal/storage"
 	"homework/internal/storage/transactor"
 	"homework/tests/postgresql/ids"
+	"homework/tests/postgresql/postgresql"
+	"math"
 	"testing"
+	"time"
 )
 
 type OrderTestSuite struct {
@@ -80,4 +84,48 @@ func (s *OrderTestSuite) TestDelete() {
 
 	_, err = s.get(order.ID)
 	require.ErrorIs(s.T(), storage.ErrNotFound, err)
+}
+
+func (s *OrderTestSuite) TestCached() {
+	orderStorage, db := s.getStorageWithCache()
+
+	order := NewDeliveredOrderWithoutWrapper(ids.NextID())
+	err := db.CreateOrder(s.ctx, order, "131")
+	require.Nil(s.T(), err)
+
+	_, err = orderStorage.GetOrderById(s.ctx, order.ID)
+	require.Nil(s.T(), err)
+
+	db.Close()
+
+	cachedOrder, err := orderStorage.GetOrderById(s.ctx, order.ID)
+	require.Nil(s.T(), err)
+	require.EqualExportedValues(s.T(), order, cachedOrder)
+}
+
+func (s *OrderTestSuite) TestRemoveCache() {
+	orderStorage, db := s.getStorageWithCache()
+
+	order := NewDeliveredOrderWithoutWrapper(ids.NextID())
+	err := orderStorage.AddOrder(s.ctx, order, "131")
+	require.Nil(s.T(), err)
+
+	_, err = orderStorage.GetOrderById(s.ctx, order.ID)
+	require.Nil(s.T(), err)
+
+	idsWithHashes := dto.IdsWithHashes{Ids: []string{order.ID}, Hashes: []string{order.ID}}
+	err = orderStorage.UpdateStatus(s.ctx, idsWithHashes, model.StatusIssued)
+	require.Nil(s.T(), err)
+
+	db.Close()
+
+	_, err = orderStorage.GetOrderById(s.ctx, order.ID)
+	require.ErrorIs(s.T(), err, puddle.ErrClosedPool)
+}
+
+func (s *OrderTestSuite) getStorageWithCache() (*storage.OrderStorage, *postgresql.DBPool) {
+	db := postgresql.NewFromEnv()
+	transactor := transactor.NewTransactionManager(db.GetPool())
+	orderStorage := storage.NewOrderStorage(&transactor, cache.NewOrdersCache(math.MaxInt, time.Hour))
+	return orderStorage, db
 }
