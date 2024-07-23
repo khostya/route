@@ -9,4 +9,5 @@ var (
 	ErrOutputConfigPathIsEmpty   = errors.New("OUTPUT_CONFIG_PATH is empty")
 	ErrOutputFilterDoesNotExits  = errors.New("output filter does not exits")
 	ErrKafkaConfigPathIsEmpty    = errors.New("KAFKA_CONFIG_PATH is empty")
+	ErrApiConfigPathIsEmpty      = errors.New("API_CONFIG_PATH is empty")
 )

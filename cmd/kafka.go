@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -8,7 +8,9 @@ import (
 	"log"
 )
 
-func getOnCallKafkaSender(ctx context.Context, cfg config.KafkaConfig) *oncall.KafkaProducer {
+func GetOnCallKafkaSender(ctx context.Context) *oncall.KafkaProducer {
+	cfg := config.MustNewKafkaConfig()
+
 	kafkaProducer, err := kafka.NewProducer(ctx, cfg.Brokers)
 	if err != nil {
 		log.Fatalln(err)
@@ -18,7 +20,9 @@ func getOnCallKafkaSender(ctx context.Context, cfg config.KafkaConfig) *oncall.K
 	return onCallConsumer
 }
 
-func getOnCallKafkaReceiver(cfg config.KafkaConfig, handler oncall.HandleFunc) *oncall.KafkaConsumer {
+func GetOnCallKafkaReceiver(handler oncall.HandleFunc) *oncall.KafkaConsumer {
+	cfg := config.MustNewKafkaConfig()
+
 	kafkaConsumer, err := kafka.NewConsumer(cfg.Brokers)
 	if err != nil {
 		log.Fatalln(err)

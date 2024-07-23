@@ -1,0 +1,364 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ozon route 256",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "Order",
+      "description": "Order service example",
+      "externalDocs": {
+        "description": "Find out more about grpc-gateway",
+        "url": "https://github.com/grpc-ecosystem/grpc-gateway?tab=readme-ov-file"
+      }
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/order/delver": {
+      "post": {
+        "operationId": "Order_DeliverOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/orderDeliverOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "order"
+        ]
+      }
+    },
+    "/v1/order/issue": {
+      "patch": {
+        "operationId": "Order_IssueOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/orderIssueOrdersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "order"
+        ]
+      }
+    },
+    "/v1/order/refund": {
+      "patch": {
+        "operationId": "Order_RefundOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/orderRefundOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "order"
+        ]
+      }
+    },
+    "/v1/order/return": {
+      "patch": {
+        "operationId": "Order_ReturnOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/orderReturnOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "order"
+        ]
+      }
+    },
+    "/v1/orders": {
+      "get": {
+        "operationId": "Order_ListOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/orderListOrdersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "ORDER_STATUS_ANY",
+              "ORDER_STATUS_DELIVERED",
+              "ORDER_STATUS_ISSUED",
+              "ORDER_STATUS_REFUNDED"
+            ],
+            "default": "ORDER_STATUS_ANY"
+          }
+        ],
+        "tags": [
+          "order"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ListOrdersResponseOrder": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "recipientID": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/orderOrderStatus"
+        }
+      }
+    },
+    "orderDeliverOrderRequest": {
+      "type": "object",
+      "properties": {
+        "orderID": {
+          "type": "string"
+        },
+        "userID": {
+          "type": "string"
+        },
+        "exp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "wrapperType": {
+          "$ref": "#/definitions/orderWrapperType"
+        },
+        "weightInKg": {
+          "type": "number",
+          "format": "float"
+        },
+        "priceInRub": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "required": [
+        "orderID",
+        "userID",
+        "exp",
+        "wrapperType",
+        "weightInKg",
+        "priceInRub"
+      ]
+    },
+    "orderIssueOrdersRequest": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    },
+    "orderListOrdersResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ListOrdersResponseOrder"
+          }
+        }
+      }
+    },
+    "orderOrderStatus": {
+      "type": "string",
+      "enum": [
+        "ORDER_STATUS_ANY",
+        "ORDER_STATUS_DELIVERED",
+        "ORDER_STATUS_ISSUED",
+        "ORDER_STATUS_REFUNDED"
+      ],
+      "default": "ORDER_STATUS_ANY"
+    },
+    "orderRefundOrderRequest": {
+      "type": "object",
+      "properties": {
+        "userID": {
+          "type": "string"
+        },
+        "orderID": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "userID",
+        "orderID"
+      ]
+    },
+    "orderReturnOrderRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "orderWrapperType": {
+      "type": "string",
+      "enum": [
+        "WRAPPER_TYPE_NONE",
+        "WRAPPER_TYPE_BOX",
+        "WRAPPER_TYPE_PACKAGE",
+        "WRAPPER_TYPE_STRETCH"
+      ],
+      "default": "WRAPPER_TYPE_NONE"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

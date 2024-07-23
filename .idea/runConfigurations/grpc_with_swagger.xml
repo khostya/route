@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="grpc with swagger" type="CompoundRunConfigurationType">
+    <toRun name="go build homework/cmd/docs" type="GoApplicationRunConfiguration" />
+    <toRun name="go build homework/cmd/grpc" type="GoApplicationRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>

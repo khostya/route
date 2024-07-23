@@ -10,6 +10,7 @@ var (
 	StatusDelivered = Status("delivered")
 	StatusIssued    = Status("issued")
 	StatusRefunded  = Status("refunded")
+	StatusNone      = Status("")
 	TimeFormat      = time.RFC3339
 )
 

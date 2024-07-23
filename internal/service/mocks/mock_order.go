@@ -69,6 +69,21 @@ func (mr *MockorderServiceMockRecorder) IssueOrders(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueOrders", reflect.TypeOf((*MockorderService)(nil).IssueOrders), ctx, ids)
 }
 
+// ListOrders mocks base method.
+func (m *MockorderService) ListOrders(ctx context.Context, param dto.ListOrdersParam) ([]model.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListOrders", ctx, param)
+	ret0, _ := ret[0].([]model.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListOrders indicates an expected call of ListOrders.
+func (mr *MockorderServiceMockRecorder) ListOrders(ctx, param any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOrders", reflect.TypeOf((*MockorderService)(nil).ListOrders), ctx, param)
+}
+
 // ListUserOrders mocks base method.
 func (m *MockorderService) ListUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error) {
 	m.ctrl.T.Helper()

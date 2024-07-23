@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test" type="CompoundRunConfigurationType">
+    <toRun name="go test integration" type="CompoundRunConfigurationType" />
+    <toRun name="go test unit" type="GoTestRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>

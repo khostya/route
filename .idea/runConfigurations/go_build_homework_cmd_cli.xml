@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go build homework/cmd" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+  <configuration default="false" name="go build homework/cmd/cli" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
     <module name="homework-1" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
@@ -9,7 +9,7 @@
       <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.json" />
     </envs>
     <kind value="PACKAGE" />
-    <package value="homework/cmd" />
+    <package value="homework/cmd/cli" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$/cmd/main.go" />
     <method v="2" />

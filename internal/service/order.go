@@ -26,6 +26,7 @@ type (
 		GetOrderById(ctx context.Context, id string) (model.Order, error)
 		DeleteOrder(ctx context.Context, id string) error
 		RefundedOrders(ctx context.Context, get dto.PageParam) ([]model.Order, error)
+		ListOrders(ctx context.Context, get dto.ListOrdersParam) ([]model.Order, error)
 	}
 
 	wrapperStorage interface {
@@ -101,6 +102,11 @@ func (o *Order) Deliver(ctx context.Context, order dto.DeliverOrderParam) error 
 func (o *Order) ListUserOrders(ctx context.Context, param dto.ListUserOrdersParam) ([]model.Order, error) {
 	_ = hash2.GenerateHash()
 	return o.orderStorage.ListUserOrders(ctx, param.UserId, param.Count, model.StatusDelivered)
+}
+
+func (o *Order) ListOrders(ctx context.Context, param dto.ListOrdersParam) ([]model.Order, error) {
+	_ = hash2.GenerateHash()
+	return o.orderStorage.ListOrders(ctx, param)
 }
 
 func (o *Order) RefundedOrders(ctx context.Context, param dto.PageParam) ([]model.Order, error) {

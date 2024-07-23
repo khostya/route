@@ -35,6 +35,17 @@ func (s *OrderStorage) RefundedOrders(ctx context.Context, get dto.PageParam) ([
 	return s.get(ctx, dto.GetParam{Limit: get.Size, Offset: offset, Status: model.StatusRefunded, Order: desc})
 }
 
+func (s *OrderStorage) ListOrders(ctx context.Context, get dto.ListOrdersParam) ([]model.Order, error) {
+	offset := get.Size * get.Page
+	return s.get(ctx, dto.GetParam{
+		Limit:       get.Size,
+		Offset:      offset,
+		Status:      get.Status,
+		RecipientId: get.UserId,
+		Order:       desc,
+	})
+}
+
 func (s *OrderStorage) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
 	return s.get(ctx, dto.GetParam{Status: status, Limit: count, RecipientId: userId, Order: desc})
 }

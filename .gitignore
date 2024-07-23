@@ -1,5 +1,5 @@
 orders.json
 .idea/*
 !.idea/runConfigurations
-bin
 vendor.*
+bin

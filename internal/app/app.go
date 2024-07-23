@@ -8,6 +8,7 @@ import (
 	"homework/pkg/output"
 	"math"
 	"math/rand"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -22,7 +23,7 @@ type (
 	}
 
 	onCallProducer interface {
-		SendAsyncMessage(message dto.CallMessage) error
+		SendAsyncMessage(message dto.OnCallMessage) error
 	}
 
 	App struct {
@@ -85,10 +86,10 @@ func (a *App) worker(ctx context.Context, n int) {
 			a.cli.Run(ctx, job)
 			a.output.Push(fmt.Sprintf("stop: job=%s, n=%v, time=%s\n", job, n, time.Now().Format(model.TimeFormat)))
 
-			_ = a.onCall.SendAsyncMessage(dto.CallMessage{
+			_ = a.onCall.SendAsyncMessage(dto.OnCallMessage{
 				CalledAt: time.Now(),
 				Method:   job[0],
-				Args:     job[1:],
+				Args:     strings.Join(job[1:], " "),
 			})
 
 		case <-a.startWorker:
