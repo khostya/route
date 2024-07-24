@@ -7,6 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go"
 	"homework/internal/dto"
 	"homework/internal/model"
 	"homework/internal/storage/schema"
@@ -23,20 +24,34 @@ const (
 type (
 	OrderStorage struct {
 		transactor.QueryEngineProvider
+		ordersCache ordersCache
+	}
+
+	ordersCache interface {
+		Get(string) ([]model.Order, bool)
+		Put(string, []model.Order)
+		RemoveById(string)
+		RemoveByIds([]string)
 	}
 )
 
-func NewOrderStorage(provider transactor.QueryEngineProvider) *OrderStorage {
-	return &OrderStorage{provider}
+func NewOrderStorage(provider transactor.QueryEngineProvider, ordersCache ordersCache) *OrderStorage {
+	return &OrderStorage{provider, ordersCache}
 }
 
 func (s *OrderStorage) RefundedOrders(ctx context.Context, get dto.PageParam) ([]model.Order, error) {
-	offset := get.Size * get.Page
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.RefundedOrders")
+	defer span.Finish()
+
+	offset := get.Size * (get.Page - 1)
 	return s.get(ctx, dto.GetParam{Limit: get.Size, Offset: offset, Status: model.StatusRefunded, Order: desc})
 }
 
 func (s *OrderStorage) ListOrders(ctx context.Context, get dto.ListOrdersParam) ([]model.Order, error) {
-	offset := get.Size * get.Page
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.ListOrders")
+	defer span.Finish()
+
+	offset := get.Size * (get.Page - 1)
 	return s.get(ctx, dto.GetParam{
 		Limit:       get.Size,
 		Offset:      offset,
@@ -47,6 +62,9 @@ func (s *OrderStorage) ListOrders(ctx context.Context, get dto.ListOrdersParam) 
 }
 
 func (s *OrderStorage) ListUserOrders(ctx context.Context, userId string, count uint, status model.Status) ([]model.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.ListUserOrders")
+	defer span.Finish()
+
 	return s.get(ctx, dto.GetParam{Status: status, Limit: count, RecipientId: userId, Order: desc})
 }
 
@@ -55,6 +73,9 @@ func (s *OrderStorage) getByStatus(ctx context.Context, status model.Status) ([]
 }
 
 func (s *OrderStorage) AddOrder(ctx context.Context, order model.Order, hash string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.AddOrder")
+	defer span.Finish()
+
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	record := schema.NewOrder(order, hash)
 	query := sq.Insert(orderTable).
@@ -82,6 +103,11 @@ func (s *OrderStorage) ListOrdersByIds(ctx context.Context, ids []string, status
 }
 
 func (s *OrderStorage) get(ctx context.Context, param dto.GetParam) ([]model.Order, error) {
+	cachedOrders, ok := s.ordersCache.Get(param.String())
+	if ok {
+		return cachedOrders, nil
+	}
+
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 	n := 1
 
@@ -123,10 +149,19 @@ func (s *OrderStorage) get(ctx context.Context, param dto.GetParam) ([]model.Ord
 		return []model.Order{}, err
 	}
 
-	return schema.ExtractOrdersFromWrapperOrder(records)
+	orders, err := schema.ExtractOrdersFromWrapperOrder(records)
+	if err != nil {
+		return nil, err
+	}
+
+	s.ordersCache.Put(param.String(), orders)
+	return orders, nil
 }
 
 func (s *OrderStorage) UpdateStatus(ctx context.Context, ids dto.IdsWithHashes, status model.Status) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.UpdateStatus")
+	defer span.Finish()
+
 	var setCases strings.Builder
 	setCases.WriteString("case\n")
 	for i, id := range ids.Ids {
@@ -151,10 +186,18 @@ func (s *OrderStorage) UpdateStatus(ctx context.Context, ids dto.IdsWithHashes, 
 	if err == nil && tag.RowsAffected() == 0 {
 		return ErrNotFound
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	s.ordersCache.RemoveByIds(ids.Ids)
+	return nil
 }
 
 func (s *OrderStorage) GetOrderById(ctx context.Context, id string) (model.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.GetOrderById")
+	defer span.Finish()
+
 	orders, err := s.get(ctx, dto.GetParam{Ids: []string{id}})
 	if err != nil {
 		return model.Order{}, err
@@ -166,6 +209,9 @@ func (s *OrderStorage) GetOrderById(ctx context.Context, id string) (model.Order
 }
 
 func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "storage.OrderStorage.DeleteOrder")
+	defer span.Finish()
+
 	db := s.QueryEngineProvider.GetQueryEngine(ctx)
 
 	query := sq.Delete(orderTable).
@@ -182,5 +228,10 @@ func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
 	if err == nil && tag.RowsAffected() == 0 {
 		return ErrNotFound
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	s.ordersCache.RemoveById(id)
+	return nil
 }

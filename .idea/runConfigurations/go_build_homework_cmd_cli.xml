@@ -7,6 +7,7 @@
       <env name="KAFKA_CONFIG_PATH" value="./config/kafka.yml" />
       <env name="OUTPUT_CONFIG_PATH" value="./config/output.yml" />
       <env name="WRAPPERS_CONFIG_PATH" value="./config/wrapper.json" />
+      <env name="CACHE_CONFIG_PATH" value="./config/cache.yml" />
     </envs>
     <kind value="PACKAGE" />
     <package value="homework/cmd/cli" />

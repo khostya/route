@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"errors"
+	"github.com/opentracing/opentracing-go"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"homework/internal/dto"
+	"homework/internal/metrics"
 	"homework/internal/model"
 	"homework/internal/model/wrapper"
 	"homework/internal/service"
@@ -31,10 +33,15 @@ type (
 )
 
 func NewOrderService(orderService orderService) *OrderService {
-	return &OrderService{service: orderService}
+	return &OrderService{
+		service: orderService,
+	}
 }
 
 func (o *OrderService) ReturnOrder(ctx context.Context, req *order.ReturnOrderRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api.OrderService.ReturnOrder")
+	defer span.Finish()
+
 	if err := req.ValidateAll(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -49,6 +56,9 @@ func (o *OrderService) ReturnOrder(ctx context.Context, req *order.ReturnOrderRe
 }
 
 func (o *OrderService) IssueOrders(ctx context.Context, req *order.IssueOrdersRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api.OrderService.IssueOrders")
+	defer span.Finish()
+
 	if err := req.ValidateAll(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -57,10 +67,15 @@ func (o *OrderService) IssueOrders(ctx context.Context, req *order.IssueOrdersRe
 	if err := toGRPCError(err); err != nil {
 		return nil, err
 	}
+
+	metrics.AddIssuedOrders(len(req.Ids))
 	return &emptypb.Empty{}, nil
 }
 
 func (o *OrderService) RefundOrder(ctx context.Context, req *order.RefundOrderRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api.OrderService.RefundOrder")
+	defer span.Finish()
+
 	if err := req.ValidateAll(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -78,21 +93,29 @@ func (o *OrderService) RefundOrder(ctx context.Context, req *order.RefundOrderRe
 }
 
 func (o *OrderService) ListOrders(ctx context.Context, req *order.ListOrdersRequest) (*order.ListOrdersResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api.OrderService.ListOrders")
+	defer span.Finish()
+
 	if err := req.ValidateAll(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	orders, err := o.service.ListOrders(ctx, dto.ListOrdersParam{
+	param := dto.ListOrdersParam{
 		UserId: req.GetUserID(),
 		Size:   uint(req.GetSize()),
 		Page:   uint(req.GetPage()),
 		Status: grpcOrderStatusToDomain(req.GetStatus()),
-	})
+	}
 
+	orders, err := o.service.ListOrders(ctx, param)
 	if err := toGRPCError(err); err != nil {
 		return nil, err
 	}
 
+	return o.buildListOrderResp(orders), nil
+}
+
+func (o *OrderService) buildListOrderResp(orders []model.Order) *order.ListOrdersResponse {
 	var resp order.ListOrdersResponse
 	for _, o := range orders {
 		respOrder := &order.ListOrdersResponse_Order{
@@ -102,11 +125,13 @@ func (o *OrderService) ListOrders(ctx context.Context, req *order.ListOrdersRequ
 		}
 		resp.Orders = append(resp.Orders, respOrder)
 	}
-
-	return &resp, nil
+	return &resp
 }
 
 func (o *OrderService) DeliverOrder(ctx context.Context, req *order.DeliverOrderRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api.OrderService.DeliverOrder")
+	defer span.Finish()
+
 	if err := req.ValidateAll(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

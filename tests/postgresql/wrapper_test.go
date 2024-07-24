@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"homework/internal/cache"
 	"homework/internal/model"
 	"homework/internal/model/wrapper"
 	"homework/internal/storage"
@@ -29,7 +30,7 @@ func TestWrapper(t *testing.T) {
 func (s *WrapperTestSuite) SetupSuite() {
 	s.T().Parallel()
 	s.transactor = transactor.NewTransactionManager(db.GetPool())
-	s.orderStorage = storage.NewOrderStorage(&s.transactor)
+	s.orderStorage = storage.NewOrderStorage(&s.transactor, cache.NewOrdersCache(1, 0))
 	s.wrapperStorage = storage.NewWrapperStorage(&s.transactor)
 	s.ctx = context.Background()
 }

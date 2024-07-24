@@ -15,6 +15,14 @@ migration-status:
 	$(eval PG_URL?=$(DEFAULT_PG_URL))
 	goose -dir ./migrations postgres "$(PG_URL)" status
 
+.PHONY: .dev-up
+dev-up:
+	docker compose up -d
+
+.PHONY: .dev-down
+dev-down:
+	docker compose down
+
 .PHONY: .db-up
 db-up:
 	docker compose up -d postgres

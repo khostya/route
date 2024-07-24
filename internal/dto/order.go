@@ -1,8 +1,10 @@
 package dto
 
 import (
+	"fmt"
 	"homework/internal/model"
 	"homework/internal/model/wrapper"
+	"strings"
 	"time"
 )
 
@@ -48,3 +50,12 @@ type (
 		Offset      uint
 	}
 )
+
+func (p ListOrdersParam) String() string {
+	return fmt.Sprintf("[ListOrdersParam]: page=%v userID=%v size=%v status=%v ", p.Page, p.UserId, p.Size, string(p.Status))
+}
+
+func (p GetParam) String() string {
+	return fmt.Sprintf("[GetParam]: ids=%v status=%v order=%v limit=%v RecipientId=%v Offset=%v",
+		strings.Join(p.Ids, ", "), string(p.Status), p.Order, p.Limit, p.RecipientId, p.Offset)
+}
